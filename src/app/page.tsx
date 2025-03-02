@@ -1,15 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Card, CardContent } from "@ims/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@ims/components/ui/table";
 import ActionsBar from "@ims/components/ui/actionsbar";
-import { Checkbox } from "@ims/components/ui/checkbox";
-
-const inventoryData = [
-  { id: 1, product: "Large Desk", location: "WH/Stock", onHand: 4, forecast: -1, toOrder: 1 },
-  { id: 2, product: "Flipover", location: "WH/Stock", onHand: 5, forecast: -6, toOrder: 6 },
-  { id: 3, product: "Office Lamp", location: "WH/Stock/Asse...", onHand: 8, forecast: 0, toOrder: 2 },
-];
 
 export default function Home() {
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
@@ -17,66 +10,67 @@ export default function Home() {
   interface InventoryItem {
     id: number;
     product: string;
-    location: string;
-    onHand: number;
     project: string;
-    checkedOutBy?: string;
+    quantity: number;
+    activity: string;
+    date: string;
+    by: string;
   }
 
   const inventoryData: InventoryItem[] = [
-    { id: 1, product: "Large Desk", location: "WH/Stock", onHand: 4, checkedOutBy: "John Doe", project: "Project A" },
-    { id: 2, product: "Flipover", location: "WH/Stock", onHand: 5, checkedOutBy: "Jane Doe", project: "Project B" },
-    { id: 3, product: "Office Lamp", location: "WH/Stock/Asse...", onHand: 8, checkedOutBy: "John Doe", project: "Project A" },
+    { id: 1, product: "Large Desk", project: "WiFi Measurement", quantity: 4, activity: "Check-In", date: "01 Mar 2025", by: "Yuning Zhang" },
+    { id: 2, product: "Flipover", project: "WiFi Measurement", quantity: 5, activity: "Check-Out", date: "15 Feb 2025", by: "Yuning Zhang" },
+    { id: 3, product: "Office Lamp", project: "WiFi Measurement", quantity: 8, activity: "Check-In", date: "25 Dec 2024", by: "Nikhil Koushika" },
   ];
 
+  const singleClick = useRef<NodeJS.Timeout | null>(null);
+
   const toggleSelect = (id: number) => {
-    setSelectedItems((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
+
+    if (singleClick.current)
+      clearTimeout(singleClick.current);
+
+    singleClick.current = setTimeout(() => {
+      setSelectedItems((prev) =>
+        prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+      );
+    }, 250);
+  };
+
+  const openItemDialog = (id: number) => {
+
+    if (singleClick.current)
+      clearTimeout(singleClick.current);
+
+    console.log("Open item dialog", id);
   };
 
   return (
     <div className="flex h-screen">
       <div className="flex-1 p-4">
-        <ActionsBar selectedItems={selectedItems} />
+        <h1 className="text-2xl font-bold">History</h1>
         <Card className="mt-4">
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>
-                    <Checkbox
-                      checked={selectedItems.length === inventoryData.length}
-                      onCheckedChange={() => {
-                        if (selectedItems.length === inventoryData.length) {
-                          setSelectedItems([]);
-                        } else {
-                          setSelectedItems(inventoryData.map((item) => item.id));
-                        }
-                      }}
-                    />
-                  </TableHead>
                   <TableHead>Product</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>On Hand</TableHead>
                   <TableHead>Project</TableHead>
-                  <TableHead>Checked Out By</TableHead>
+                  <TableHead>Quantity</TableHead>
+                  <TableHead>Activity</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>By</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {inventoryData.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>
-                      <Checkbox
-                        checked={selectedItems.includes(item.id)}
-                        onCheckedChange={() => toggleSelect(item.id)}
-                      />
-                    </TableCell>
+                  <TableRow className="cursor-pointer" key={item.id}>
                     <TableCell>{item.product}</TableCell>
-                    <TableCell>{item.location}</TableCell>
-                    <TableCell>{item.onHand}</TableCell>
                     <TableCell>{item.project}</TableCell>
-                    <TableCell>{item.checkedOutBy}</TableCell>
+                    <TableCell>{item.quantity}</TableCell>
+                    <TableCell>{item.activity}</TableCell>
+                    <TableCell>{item.date}</TableCell>
+                    <TableCell>{item.by}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

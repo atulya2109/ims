@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "IMS | WiDES",
+  title: "Inventory Management System | WiDES",
   description: "Inventory Management System",
 };
 

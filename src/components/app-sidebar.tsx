@@ -1,4 +1,6 @@
-import { Settings, Home } from "lucide-react"
+"use client";
+import { CircleUser, Home, FlaskConical } from "lucide-react"
+import { usePathname } from "next/navigation"
 
 import {
   Sidebar,
@@ -11,31 +13,28 @@ import {
   SidebarMenuItem,
 } from "@ims/components/ui/sidebar"
 
-// Menu items.
+
 const items = [
   {
     title: "Dashboard",
-    url: "#",
+    url: "/",
     icon: Home,
   },
-  // {
-  //   title: "Equipment",
-  //   url: "#",
-  //   icon: FlaskConical,
-  // },
-  // {
-  //   title: "Checkin / Checkout",
-  //   url: "#",
-  //   icon: RefreshCw,
-  // },
+  {
+    title: "Equipment",
+    url: "/equipments",
+    icon: FlaskConical,
+  },
   {
     title: "Users",
-    url: "#",
-    icon: Settings,
+    url: "/users",
+    icon: CircleUser,
   },
 ]
 
 export function AppSidebar() {
+  const pathname = usePathname()
+
   return (
     <Sidebar>
       <SidebarContent>
@@ -45,7 +44,7 @@ export function AppSidebar() {
             <SidebarMenu>
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton asChild isActive={pathname === item.url}>
                     <a href={item.url}>
                       <item.icon />
                       <span>{item.title}</span>

@@ -4,41 +4,24 @@ import { Card, CardContent } from "@ims/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@ims/components/ui/table";
 import ActionsBar from "@ims/components/ui/actionsbar";
 import { Checkbox } from "@ims/components/ui/checkbox";
-import { useEffect } from "react";
-import useSWR from "swr";
 
-export default function EquipmentsPage() {
+export default function UsersPage() {
     const [selectedItems, setSelectedItems] = useState<number[]>([]);
 
     interface InventoryItem {
         id: number;
-        name: string;
+        product: string;
         location: string;
-        quantity: number;
+        total: number;
         available: number;
+
     }
 
-    const [inventoryData, setInventoryData] = useState<InventoryItem[]>([]);
-
-    const fetcher = async (url: string) => {
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error("Failed to fetch inventory data");
-        }
-        return response.json();
-    };
-
-    const { data, error } = useSWR<InventoryItem[]>("/api/equipments", fetcher);
-
-    useEffect(() => {
-        if (data) {
-            setInventoryData(data);
-        }
-    }, [data]);
-
-    if (error) {
-        console.error("Error fetching inventory data:", error);
-    }
+    const inventoryData: InventoryItem[] = [
+        { id: 1, product: "Large Desk", location: "WH/Stock", total: 4, available: 2 },
+        { id: 2, product: "Flipover", location: "WH/Stock", total: 5, available: 3 },
+        { id: 3, product: "Office Lamp", location: "WH/Stock/Asse...", total: 8, available: 5 },
+    ];
 
     const singleClick = useRef<NodeJS.Timeout | null>(null);
 
@@ -74,7 +57,7 @@ export default function EquipmentsPage() {
                                     <TableHead>
                                         <Checkbox
                                             className="cursor-pointer"
-                                            checked={selectedItems.length === inventoryData.length && inventoryData.length > 0}
+                                            checked={selectedItems.length === inventoryData.length}
                                             onCheckedChange={() => {
                                                 if (selectedItems.length === inventoryData.length) {
                                                     setSelectedItems([]);
@@ -101,9 +84,9 @@ export default function EquipmentsPage() {
                                                 onClick={(e) => e.stopPropagation()}
                                             />
                                         </TableCell>
-                                        <TableCell>{item.name}</TableCell>
+                                        <TableCell>{item.product}</TableCell>
                                         <TableCell>{item.location}</TableCell>
-                                        <TableCell>{item.quantity}</TableCell>
+                                        <TableCell>{item.total}</TableCell>
                                         <TableCell>{item.available}</TableCell>
                                     </TableRow>
                                 ))}

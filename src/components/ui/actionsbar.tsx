@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Button } from "./button";
-import { DialogDemo } from "../equipment-dialog";
+import { EquipmentDialog } from "../equipment-dialog";
 
 interface ActionsBarProps {
   selectedItems: any[];
@@ -10,7 +10,7 @@ export default function ActionsBar({ selectedItems }: ActionsBarProps) {
   return (
     <div className="flex justify-between mb-4">
       <div>
-        <DialogDemo />
+        <EquipmentDialog />
         <Button variant="outline" className="mr-2" disabled={!selectedItems.length}>Checkin</Button>
         <Button variant="outline" disabled={!selectedItems.length}>Checkout</Button>
       </div>

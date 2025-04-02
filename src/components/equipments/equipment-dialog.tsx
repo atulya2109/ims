@@ -27,9 +27,15 @@ const formSchema = z.object({
     name: z.string().nonempty("Name is required"),
     type: z.enum(["unique", "multiple"]),
     location: z.string().nonempty("Location is required"),
-    quantity: z.string().transform((val) => parseInt(val, 10)).refine((val) => !isNaN(val) && val >= 1, {
-        message: "Quantity must be at least 1",
-    }).optional(),
+    quantity: z.preprocess((val) => {
+        // If the value is an empty string, treat it as undefined.
+        if (typeof val === "string" && val.trim() === "") return undefined;
+        // If it's already a number, use it directly.
+        if (typeof val === "number") return val;
+        // Otherwise, attempt to parse it as an integer.
+        return parseInt(val as string, 10);
+    }, z.number().min(1, "Quantity must be at least 1").optional()),
+
 });
 
 export function EquipmentDialog() {
@@ -76,11 +82,10 @@ export function EquipmentDialog() {
 
             // Close the dialog after submission if needed
             setOpen(false); // Close the dialog after successful submission
-        });
+        })
     };
 
     const [open, setOpen] = useState(false);
-
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>

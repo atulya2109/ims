@@ -3,8 +3,6 @@ import { MongoClient } from "mongodb";
 const uri = process.env.MONGODB_URI;
 const dbName = process.env.MONGODB_DB;
 
-console.log("MONGODB_URI", uri);
-console.log("MONGODB_DB", dbName);
 
 if (!uri) {
     throw new Error("Please define the MONGODB_URI environment variable inside .env.local");

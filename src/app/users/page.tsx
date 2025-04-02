@@ -1,43 +1,48 @@
 "use client";
-import { useRef, useState } from "react";
+import { use, useRef, useState } from "react";
 import { Card, CardContent } from "@ims/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@ims/components/ui/table";
-import ActionsBar from "@ims/components/ui/actionsbar";
-import { Checkbox } from "@ims/components/ui/checkbox";
+import ActionsBar from "@ims/components/users/actionsbar";
+import useSWR from "swr";
+import { useEffect } from "react";
+
+interface UserItem {
+    id: string;
+    firstName: string;
+    lastName: string;
+    position: string;
+    email: string;
+}
 
 export default function UsersPage() {
-    const [selectedItems, setSelectedItems] = useState<number[]>([]);
 
-    interface InventoryItem {
-        id: number;
-        product: string;
-        location: string;
-        total: number;
-        available: number;
-
-    }
-
-    const inventoryData: InventoryItem[] = [
-        { id: 1, product: "Large Desk", location: "WH/Stock", total: 4, available: 2 },
-        { id: 2, product: "Flipover", location: "WH/Stock", total: 5, available: 3 },
-        { id: 3, product: "Office Lamp", location: "WH/Stock/Asse...", total: 8, available: 5 },
+    const userData: UserItem[] = [
+        { id: "1", firstName: "Atulya", lastName: "Bist", position: "Directed Research", email: "bist@usc.edu" },
+        { id: "2", firstName: "Atulya", lastName: "Bist", position: "Directed Research", email: "bist@usc.edu" },
+        { id: "3", firstName: "Atulya", lastName: "Bist", position: "Directed Research", email: "bist@usc.edu" },
     ];
+
+    const [users, setUsers] = useState<UserItem[]>([]);
+
+    const fetcher = async (url: string) => {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error("Failed to fetch user data");
+        }
+        return response.json();
+    };
+
+    const { data, error } = useSWR<UserItem[]>("/api/users", fetcher);
+
+    useEffect(() => {
+        if (data) {
+            setUsers(data);
+        }
+    }, [data]);
 
     const singleClick = useRef<NodeJS.Timeout | null>(null);
 
-    const toggleSelect = (id: number) => {
-
-        if (singleClick.current)
-            clearTimeout(singleClick.current);
-
-        singleClick.current = setTimeout(() => {
-            setSelectedItems((prev) =>
-                prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-            );
-        }, 250);
-    };
-
-    const openItemDialog = (id: number) => {
+    const openItemDialog = (id: string) => {
 
         if (singleClick.current)
             clearTimeout(singleClick.current);
@@ -48,46 +53,28 @@ export default function UsersPage() {
     return (
         <div className="flex h-screen">
             <div className="flex-1 p-4">
-                <ActionsBar selectedItems={selectedItems} />
+                <ActionsBar />
                 <Card className="mt-4">
                     <CardContent>
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>
-                                        <Checkbox
-                                            className="cursor-pointer"
-                                            checked={selectedItems.length === inventoryData.length}
-                                            onCheckedChange={() => {
-                                                if (selectedItems.length === inventoryData.length) {
-                                                    setSelectedItems([]);
-                                                } else {
-                                                    setSelectedItems(inventoryData.map((item) => item.id));
-                                                }
-                                            }}
-                                        />
-                                    </TableHead>
-                                    <TableHead>Product</TableHead>
-                                    <TableHead>Location</TableHead>
-                                    <TableHead>Total</TableHead>
-                                    <TableHead>Available</TableHead>
+                                    <TableHead>ID</TableHead>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead>Position</TableHead>
+                                    <TableHead>Email</TableHead>
+
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {inventoryData.map((item) => (
-                                    <TableRow className="cursor-pointer" key={item.id} onDoubleClick={() => openItemDialog(item.id)} onClick={(e) => toggleSelect(item.id)}>
+                                {users.map((user) => (
+                                    <TableRow className="cursor-pointer" key={user.id} onDoubleClick={() => openItemDialog(user.id)}>
                                         <TableCell>
-                                            <Checkbox
-                                                className="cursor-pointer"
-                                                checked={selectedItems.includes(item.id)}
-                                                onCheckedChange={(e) => toggleSelect(item.id)}
-                                                onClick={(e) => e.stopPropagation()}
-                                            />
+                                            {user.id}
                                         </TableCell>
-                                        <TableCell>{item.product}</TableCell>
-                                        <TableCell>{item.location}</TableCell>
-                                        <TableCell>{item.total}</TableCell>
-                                        <TableCell>{item.available}</TableCell>
+                                        <TableCell>{`${user.firstName} ${user.lastName}`}</TableCell>
+                                        <TableCell>{user.position}</TableCell>
+                                        <TableCell>{user.email}</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>

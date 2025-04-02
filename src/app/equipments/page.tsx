@@ -1,11 +1,11 @@
 "use client";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Card, CardContent } from "@ims/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@ims/components/ui/table";
-import ActionsBar from "@ims/components/ui/actionsbar";
+import ActionsBar from "@ims/components/equipments/actionsbar";
 import { Checkbox } from "@ims/components/ui/checkbox";
 import { useEffect } from "react";
-import useSWR from "swr";
+import useSWR, { mutate } from "swr";
 
 export default function EquipmentsPage() {
     const [selectedItems, setSelectedItems] = useState<number[]>([]);
@@ -40,32 +40,33 @@ export default function EquipmentsPage() {
         console.error("Error fetching inventory data:", error);
     }
 
-    const singleClick = useRef<NodeJS.Timeout | null>(null);
-
     const toggleSelect = (id: number) => {
-
-        if (singleClick.current)
-            clearTimeout(singleClick.current);
-
-        singleClick.current = setTimeout(() => {
-            setSelectedItems((prev) =>
-                prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-            );
-        }, 250);
+        setSelectedItems((prev) =>
+            prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+        );
     };
 
-    const openItemDialog = (id: number) => {
-
-        if (singleClick.current)
-            clearTimeout(singleClick.current);
-
-        console.log("Open item dialog", id);
-    };
+    const deleteSelectedItems = () => {
+        fetch('/api/equipments', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ items: selectedItems }),
+        })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Failed to delete items');
+                }
+                mutate('/api/equipments');
+                setSelectedItems([]);
+            })
+    }
 
     return (
         <div className="flex h-screen">
             <div className="flex-1 p-4">
-                <ActionsBar selectedItems={selectedItems} />
+                <ActionsBar selectedItems={selectedItems} onDelete={deleteSelectedItems} />
                 <Card className="mt-4">
                     <CardContent>
                         <Table>
@@ -92,7 +93,7 @@ export default function EquipmentsPage() {
                             </TableHeader>
                             <TableBody>
                                 {inventoryData.map((item) => (
-                                    <TableRow className="cursor-pointer" key={item.id} onDoubleClick={() => openItemDialog(item.id)} onClick={(e) => toggleSelect(item.id)}>
+                                    <TableRow className="cursor-pointer" key={item.id} onClick={(e) => toggleSelect(item.id)}>
                                         <TableCell>
                                             <Checkbox
                                                 className="cursor-pointer"

@@ -28,3 +28,15 @@ export async function POST(request: Request) {
 
     return new Response(JSON.stringify(result), { status: 200 });
 }
+
+export async function DELETE(request: Request) {
+    const db = await getDb();
+    const collection = db.collection("equipments");
+
+    const { items } = await request.json();
+
+    // Delete the selected items from the database
+    const result = await collection.deleteMany({ id: { $in: items } });
+
+    return new Response(JSON.stringify(result), { status: 200 });
+}

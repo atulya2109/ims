@@ -1,5 +1,5 @@
 "use client";
-import { CircleUser, Home, FlaskConical } from "lucide-react"
+import { CircleUser, Home, FlaskConical, LucideIcon, LogInIcon, LogOutIcon } from "lucide-react"
 import { usePathname } from "next/navigation"
 
 import {
@@ -8,53 +8,98 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@ims/components/ui/sidebar"
 
-
-const items = [
-  {
-    title: "Dashboard",
-    url: "/",
+const items = {
+  dashboard: [{
+    title: "Overview",
     icon: Home,
+    href: "/",
   },
   {
-    title: "Equipment",
-    url: "/equipments",
+    title: "Equipments",
     icon: FlaskConical,
+    href: "/equipments",
   },
   {
     title: "Users",
-    url: "/users",
     icon: CircleUser,
-  },
-]
+    href: "/users",
+  }],
+  actions: [
+    {
+      title: "Check Out",
+      icon: LogOutIcon,
+      href: "/checkout",
+    },
+    {
+      title: "Check In",
+      icon: LogInIcon,
+      href: "/checkin",
+    },
+
+  ]
+}
+
+function ActionsMenu({ items, ...props }: { items: { title: string, icon: LucideIcon, href: string }[] } & React.ComponentProps<typeof SidebarGroup>) {
+  const pathname = usePathname()
+  return (
+    <SidebarGroup>
+      <SidebarGroupLabel>Actions</SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu>
+          {items.map((item) => (
+            <SidebarMenuItem key={item.title} >
+              <SidebarMenuButton isActive={pathname === item.href} asChild>
+                <a href={item.href}>
+                  <item.icon />
+                  <span>{item.title}</span>
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  )
+}
+
+function DashboardMenu({ items, ...props }: { items: { title: string, icon: LucideIcon, href: string }[] } & React.ComponentProps<typeof SidebarGroup>) {
+  const pathname = usePathname()
+  return (
+    <SidebarGroup>
+      <SidebarGroupLabel>Dashboard</SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu>
+          {items.map((item) => (
+            <SidebarMenuItem key={item.title} >
+              <SidebarMenuButton isActive={pathname === item.href} asChild>
+                <a href={item.href}>
+                  <item.icon />
+                  <span>{item.title}</span>
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  )
+}
+
 
 export function AppSidebar() {
-  const pathname = usePathname()
-
   return (
     <Sidebar>
+      <SidebarHeader>
+      </SidebarHeader>
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-bold text-lg text-bold">WiDES</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={pathname === item.url}>
-                    <a href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        <DashboardMenu items={items.dashboard} />
+        <ActionsMenu items={items.actions} />
       </SidebarContent>
     </Sidebar>
   )

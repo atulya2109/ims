@@ -2,7 +2,6 @@
 import { useRef, useState } from "react";
 import { Card, CardContent } from "@ims/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@ims/components/ui/table";
-import ActionsBar from "@ims/components/equipments/actionsbar";
 
 export default function Home() {
   const [selectedItems, setSelectedItems] = useState<number[]>([]);

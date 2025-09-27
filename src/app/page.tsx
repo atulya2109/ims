@@ -1,31 +1,34 @@
 "use client";
 import { useRef, useState } from "react";
+import useSWR from "swr";
 import { Card, CardContent } from "@ims/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@ims/components/ui/table";
 
-export default function Home() {
-  const [selectedItems, setSelectedItems] = useState<number[]>([]);
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-  interface InventoryItem {
-    id: number;
+export default function Home() {
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+
+  interface HistoryItem {
+    id: string;
     product: string;
     project: string;
     quantity: number;
     activity: string;
     date: string;
     by: string;
+    checkoutId?: string;
+    checkoutDate?: string;
   }
 
-  const inventoryData: InventoryItem[] = [
-    { id: 1, product: "Large Desk", project: "WiFi Measurement", quantity: 4, activity: "Check-In", date: "01 Mar 2025", by: "Yuning Zhang" },
-    { id: 2, product: "Flipover", project: "WiFi Measurement", quantity: 5, activity: "Check-Out", date: "15 Feb 2025", by: "Yuning Zhang" },
-    { id: 3, product: "Office Lamp", project: "WiFi Measurement", quantity: 8, activity: "Check-In", date: "25 Dec 2024", by: "Nikhil Koushika" },
-  ];
+  const { data: historyData = [], isLoading } = useSWR<HistoryItem[]>(
+    "/api/history",
+    fetcher
+  );
 
   const singleClick = useRef<NodeJS.Timeout | null>(null);
 
-  const toggleSelect = (id: number) => {
-
+  const toggleSelect = (id: string) => {
     if (singleClick.current)
       clearTimeout(singleClick.current);
 
@@ -36,8 +39,7 @@ export default function Home() {
     }, 250);
   };
 
-  const openItemDialog = (id: number) => {
-
+  const openItemDialog = (id: string) => {
     if (singleClick.current)
       clearTimeout(singleClick.current);
 
@@ -62,16 +64,35 @@ export default function Home() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {inventoryData.map((item) => (
-                  <TableRow className="cursor-pointer" key={item.id}>
-                    <TableCell>{item.product}</TableCell>
-                    <TableCell>{item.project}</TableCell>
-                    <TableCell>{item.quantity}</TableCell>
-                    <TableCell>{item.activity}</TableCell>
-                    <TableCell>{item.date}</TableCell>
-                    <TableCell>{item.by}</TableCell>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center">
+                      Loading history...
+                    </TableCell>
                   </TableRow>
-                ))}
+                ) : historyData.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center">
+                      No checkout history found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  historyData.map((item) => (
+                    <TableRow
+                      className="cursor-pointer"
+                      key={item.id}
+                      onClick={() => toggleSelect(item.id)}
+                      onDoubleClick={() => openItemDialog(item.id)}
+                    >
+                      <TableCell>{item.product}</TableCell>
+                      <TableCell>{item.project}</TableCell>
+                      <TableCell>{item.quantity}</TableCell>
+                      <TableCell>{item.activity}</TableCell>
+                      <TableCell>{item.date}</TableCell>
+                      <TableCell>{item.by}</TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </CardContent>

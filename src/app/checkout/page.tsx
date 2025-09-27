@@ -32,7 +32,7 @@ export default function CheckoutPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItems, setSelectedItems] = useState<Equipment[]>([]);
 
-  const { data: equipments = [], isLoading } = useSWR<Equipment[]>(
+  const { data: equipments = [], isLoading, mutate: mutateEquipments } = useSWR<Equipment[]>(
     "/api/equipments",
     fetcher
   );
@@ -127,20 +127,41 @@ export default function CheckoutPage() {
   };
 
   const onCheckoutSubmit = async (data: z.infer<typeof checkoutFormSchema>) => {
-    // Here you would typically send the checkout data to your API
-    console.log("Checkout data:", {
-      ...data,
-      items: selectedItems,
-    });
+    try {
+      const checkoutData = {
+        userId: data.userId,
+        project: data.project,
+        items: selectedItems.map(item => ({
+          id: item.id,
+          name: item.name,
+          checkoutQuantity: item.checkoutQuantity || 1
+        }))
+      };
 
-    // For now, just show an alert
-    alert(
-      "Checkout successful! (This would normally be processed by the backend)"
-    );
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(checkoutData),
+      });
 
-    // Reset form and selected items
-    checkoutForm.reset();
-    setSelectedItems([]);
+      const result = await response.json();
+
+      if (response.ok) {
+        alert(`Checkout successful! Checkout ID: ${result.checkoutId}`);
+        // Reset form and selected items
+        checkoutForm.reset();
+        setSelectedItems([]);
+        // Refresh equipment data to show updated availability
+        mutateEquipments();
+      } else {
+        alert(`Checkout failed: ${result.error}`);
+      }
+    } catch (error) {
+      console.error("Checkout error:", error);
+      alert("Checkout failed. Please try again.");
+    }
   };
 
   return (

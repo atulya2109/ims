@@ -1,5 +1,5 @@
 import { Input } from "@ims/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 
 interface SearchBarProps {
   searchQuery: string;
@@ -7,6 +7,10 @@ interface SearchBarProps {
 }
 
 export function SearchBar({ searchQuery, onSearchChange }: SearchBarProps) {
+  const handleClear = () => {
+    onSearchChange("");
+  };
+
   return (
     <div className="relative">
       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -14,8 +18,18 @@ export function SearchBar({ searchQuery, onSearchChange }: SearchBarProps) {
         placeholder="Search equipment by name or location..."
         value={searchQuery}
         onChange={(e) => onSearchChange(e.target.value)}
-        className="pl-10"
+        className="pl-10 pr-10"
       />
+      {searchQuery && (
+        <button
+          onClick={handleClear}
+          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+          type="button"
+          aria-label="Clear search"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      )}
     </div>
   );
 }

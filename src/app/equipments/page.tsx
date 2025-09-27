@@ -1,10 +1,11 @@
 "use client";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Card, CardContent } from "@ims/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@ims/components/ui/table";
 import ActionsBar from "@ims/components/equipments/actionsbar";
 import { Checkbox } from "@ims/components/ui/checkbox";
-import { useEffect } from "react";
+import { Button } from "@ims/components/ui/button";
+import { Edit, Trash2 } from "lucide-react";
 import useSWR, { mutate } from "swr";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@ims/components/ui/context-menu";
 import {
@@ -14,11 +15,10 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@ims/components/ui/dialog";
 import QRCode from "react-qr-code";
 import { useReactToPrint } from "react-to-print";
-import { Button } from "@ims/components/ui/button";
+import { EditEquipmentDialog } from "@ims/components/equipments/EditEquipmentDialog";
 
 interface QRDialogProps {
     item: InventoryItem | undefined;
@@ -27,11 +27,12 @@ interface QRDialogProps {
 }
 
 interface InventoryItem {
-    id: number;
+    id: string;
     name: string;
     location: string;
     quantity: number;
     available: number;
+    unique: boolean;
 }
 
 
@@ -58,9 +59,11 @@ function QRDialog({ item, open, setOpen }: QRDialogProps) {
 }
 
 export default function EquipmentsPage() {
-    const [selectedItems, setSelectedItems] = useState<number[]>([]);
+    const [selectedItems, setSelectedItems] = useState<string[]>([]);
     const [showDialog, setShowDialog] = useState(false);
     const [dialogItem, setDialogItem] = useState<InventoryItem>();
+    const [editingEquipment, setEditingEquipment] = useState<InventoryItem | null>(null);
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
     const [inventoryData, setInventoryData] = useState<InventoryItem[]>([]);
 
@@ -72,7 +75,7 @@ export default function EquipmentsPage() {
         return response.json();
     };
 
-    const { data, error } = useSWR<InventoryItem[]>("/api/equipments", fetcher);
+    const { data, error, mutate: mutateEquipments } = useSWR<InventoryItem[]>("/api/equipments", fetcher);
 
     useEffect(() => {
         if (data) {
@@ -84,10 +87,42 @@ export default function EquipmentsPage() {
         console.error("Error fetching inventory data:", error);
     }
 
-    const toggleSelect = (id: number) => {
+    const singleClick = useRef<NodeJS.Timeout | null>(null);
+
+    const toggleSelectAll = () => {
+        if (selectedItems.length === inventoryData.length) {
+            setSelectedItems([]);
+        } else {
+            setSelectedItems(inventoryData.map(item => item.id));
+        }
+    };
+
+    const toggleSelect = (id: string) => {
         setSelectedItems((prev) =>
             prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
         );
+    };
+
+    const handleEditEquipment = (equipment: InventoryItem) => {
+        setEditingEquipment(equipment);
+        setIsEditDialogOpen(true);
+    };
+
+    const openItemDialog = (id: string) => {
+        if (singleClick.current)
+            clearTimeout(singleClick.current);
+
+        const equipment = inventoryData.find(item => item.id === id);
+        if (equipment) {
+            handleEditEquipment(equipment);
+        }
+    };
+
+    const onEquipmentSaved = (updatedEquipment: InventoryItem) => {
+        setInventoryData(prev => prev.map(item =>
+            item.id === updatedEquipment.id ? updatedEquipment : item
+        ));
+        mutateEquipments();
     };
 
     const deleteSelectedItems = () => {
@@ -109,52 +144,107 @@ export default function EquipmentsPage() {
         setShowDialog(false)
     }
 
+    const selectedEquipmentsData = inventoryData.filter(item => selectedItems.includes(item.id));
+
     return (
         <div className="flex h-screen">
             <div className="flex-1 p-4">
                 <QRDialog item={dialogItem} open={showDialog} setOpen={setShowDialog} />
-                <ActionsBar selectedItems={selectedItems} onDelete={deleteSelectedItems} />
+
+                {/* Combined Actions Bar */}
+                <div className="flex justify-between items-center mb-4">
+                    <div className="flex gap-2">
+                        <ActionsBar />
+
+                        {/* Dynamic Action Buttons */}
+                        {selectedItems.length > 0 && (
+                            <>
+                                {selectedItems.length === 1 && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleEditEquipment(selectedEquipmentsData[0])}
+                                    >
+                                        <Edit className="h-4 w-4 mr-2" />
+                                        Edit Equipment
+                                    </Button>
+                                )}
+                                <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={deleteSelectedItems}
+                                >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Delete {selectedItems.length > 1 ? `${selectedItems.length} Items` : 'Item'}
+                                </Button>
+                            </>
+                        )}
+                    </div>
+                </div>
                 <Card className="mt-4">
                     <CardContent>
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>
+                                    <TableHead className="w-12">
                                         <Checkbox
-                                            className="cursor-pointer"
                                             checked={selectedItems.length === inventoryData.length && inventoryData.length > 0}
-                                            onCheckedChange={() => {
-                                                if (selectedItems.length === inventoryData.length) {
-                                                    setSelectedItems([]);
-                                                } else {
-                                                    setSelectedItems(inventoryData.map((item) => item.id));
-                                                }
-                                            }}
+                                            onCheckedChange={toggleSelectAll}
+                                            aria-label="Select all equipment"
                                         />
                                     </TableHead>
                                     <TableHead>Product</TableHead>
                                     <TableHead>Location</TableHead>
                                     <TableHead>Total</TableHead>
                                     <TableHead>Available</TableHead>
+                                    <TableHead className="w-24">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {inventoryData.map((item) => (
                                     <ContextMenu key={item.id}>
                                         <ContextMenuTrigger asChild>
-                                            <TableRow className="cursor-pointer" key={item.id} onClick={(e) => toggleSelect(item.id)}>
+                                            <TableRow
+                                                className="cursor-pointer"
+                                                key={item.id}
+                                                onDoubleClick={() => openItemDialog(item.id)}
+                                            >
                                                 <TableCell>
                                                     <Checkbox
-                                                        className="cursor-pointer"
                                                         checked={selectedItems.includes(item.id)}
-                                                        onCheckedChange={(e) => toggleSelect(item.id)}
-                                                        onClick={(e) => e.stopPropagation()}
+                                                        onCheckedChange={() => toggleSelect(item.id)}
+                                                        aria-label={`Select ${item.name}`}
                                                     />
                                                 </TableCell>
                                                 <TableCell>{item.name}</TableCell>
                                                 <TableCell>{item.location}</TableCell>
                                                 <TableCell>{item.quantity}</TableCell>
                                                 <TableCell>{item.available}</TableCell>
+                                                <TableCell>
+                                                    <div className="flex gap-1">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleEditEquipment(item);
+                                                            }}
+                                                        >
+                                                            <Edit className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setSelectedItems([item.id]);
+                                                                deleteSelectedItems();
+                                                            }}
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
                                             </TableRow>
                                         </ContextMenuTrigger>
                                         <ContextMenuContent>
@@ -168,6 +258,14 @@ export default function EquipmentsPage() {
                         </Table>
                     </CardContent>
                 </Card>
+
+                {/* Dialogs */}
+                <EditEquipmentDialog
+                    equipment={editingEquipment}
+                    isOpen={isEditDialogOpen}
+                    onClose={() => setIsEditDialogOpen(false)}
+                    onSave={onEquipmentSaved}
+                />
             </div>
         </div>
     );

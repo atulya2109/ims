@@ -3,7 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@ims/components/theme-provider";
 import { SidebarProvider } from "@ims/components/ui/sidebar";
-import App from "next/app";
 import { AppSidebar } from "@ims/components/ui/app-sidebar";
 
 const geistSans = Geist({
@@ -33,14 +32,12 @@ export default function RootLayout({
       >
         <ThemeProvider
           attribute="class"
-          defaultTheme="dark"
+          defaultTheme="light"
           disableTransitionOnChange
         >
           <SidebarProvider>
             <AppSidebar />
-            <main className="w-full">
-              {children}
-            </main>
+            <main className="w-full">{children}</main>
           </SidebarProvider>
         </ThemeProvider>
       </body>

@@ -56,14 +56,15 @@ export function CheckoutForm({
       <div className="p-4">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
-            <div className="flex items-end gap-4">
+            <div className="flex items-start gap-4">
               {/* Items Count */}
-              <div className="flex-shrink-0">
+              <div className="flex flex-col">
                 <p className="text-sm font-medium text-muted-foreground mb-1">
                   Selected
                 </p>
                 <p className="font-semibold">
-                  {selectedItems.length} item{selectedItems.length > 1 ? "s" : ""}
+                  {selectedItems.length} item
+                  {selectedItems.length > 1 ? "s" : ""}
                 </p>
               </div>
 
@@ -91,7 +92,9 @@ export function CheckoutForm({
                           </SelectContent>
                         </Select>
                       </FormControl>
-                      <FormMessage />
+                      <div className="h-5">
+                        <FormMessage />
+                      </div>
                     </FormItem>
                   )}
                 />
@@ -107,14 +110,16 @@ export function CheckoutForm({
                       <FormControl>
                         <Input placeholder="Enter project name" {...field} />
                       </FormControl>
-                      <FormMessage />
+                      <div className="h-5">
+                        <FormMessage />
+                      </div>
                     </FormItem>
                   )}
                 />
               </div>
 
               {/* Checkout Button */}
-              <div className="flex-shrink-0">
+              <div className="flex flex-col">
                 <Button type="submit" className="px-8">
                   Checkout
                 </Button>

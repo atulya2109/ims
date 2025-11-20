@@ -11,7 +11,6 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } 
 import {
     Dialog,
     DialogContent,
-    DialogDescription,
     DialogFooter,
     DialogHeader,
     DialogTitle,
@@ -248,7 +247,7 @@ export default function EquipmentsPage() {
                                             </TableRow>
                                         </ContextMenuTrigger>
                                         <ContextMenuContent>
-                                            <ContextMenuItem onClick={(e) => { setShowDialog(true); setDialogItem(item) }}>
+                                            <ContextMenuItem onClick={() => { setShowDialog(true); setDialogItem(item) }}>
                                                 View QR Code
                                             </ContextMenuItem>
                                         </ContextMenuContent>

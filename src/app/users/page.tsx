@@ -34,7 +34,7 @@ export default function UsersPage() {
         return response.json();
     };
 
-    const { data, error, mutate } = useSWR<UserItem[]>("/api/users", fetcher);
+    const { data, mutate } = useSWR<UserItem[]>("/api/users", fetcher);
 
     useEffect(() => {
         if (data) {

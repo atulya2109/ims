@@ -84,7 +84,7 @@ export function UserCreationDialog() {
                 <DialogHeader>
                     <DialogTitle>New User</DialogTitle>
                     <DialogDescription>
-                        Please fill in all the required details below. Click save when you're done.
+                        Please fill in all the required details below. Click save when you&apos;re done.
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>

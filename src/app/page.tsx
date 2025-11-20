@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function Home() {
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [, setSelectedItems] = useState<string[]>([]);
 
   interface HistoryItem {
     id: string;

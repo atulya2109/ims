@@ -1,6 +1,6 @@
 import { getDb } from "@ims/lib/mongodb";
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const db = await getDb();
     const checkoutsCollection = db.collection("checkouts");
@@ -28,7 +28,7 @@ export async function GET(request: Request) {
       const user = userMap.get(checkout.userId);
       const userName = user ? `${user.firstName} ${user.lastName}` : 'Unknown User';
 
-      return checkout.items.map((item: any) => ({
+      return checkout.items.map((item: { id: string; name: string; checkoutQuantity: number }) => ({
         id: `checkout-${checkout.id}-${item.id}`,
         product: item.name,
         project: checkout.project,
@@ -50,7 +50,7 @@ export async function GET(request: Request) {
       const user = userMap.get(checkin.userId);
       const userName = user ? `${user.firstName} ${user.lastName}` : 'Unknown User';
 
-      return checkin.items.map((item: any) => ({
+      return checkin.items.map((item: { id: string; name: string; checkinQuantity: number }) => ({
         id: `checkin-${checkin.id}-${item.id}`,
         product: item.name,
         project: checkin.project,

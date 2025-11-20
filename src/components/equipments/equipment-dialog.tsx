@@ -9,7 +9,7 @@ import {
     DialogTrigger,
 } from "@ims/components/ui/dialog";
 import { Input } from "@ims/components/ui/input";
-import { set, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ims/components/ui/form";
@@ -96,7 +96,7 @@ export function EquipmentDialog() {
                 <DialogHeader>
                     <DialogTitle>New Item</DialogTitle>
                     <DialogDescription>
-                        Please fill in all the required details below. Click save when you're done.
+                        Please fill in all the required details below. Click save when you&apos;re done.
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>

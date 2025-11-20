@@ -1,7 +1,6 @@
 import { getDb } from "@ims/lib/mongodb";
-import { v4 as uuidv4 } from 'uuid';
 
-export async function GET(request: Request) {
+export async function GET() {
     const db = await getDb();
     const collection = db.collection("users");
 

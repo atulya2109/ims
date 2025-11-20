@@ -45,7 +45,7 @@ const items = {
   ]
 }
 
-function ActionsMenu({ items, ...props }: { items: { title: string, icon: LucideIcon, href: string }[] } & React.ComponentProps<typeof SidebarGroup>) {
+function ActionsMenu({ items }: { items: { title: string, icon: LucideIcon, href: string }[] }) {
   const pathname = usePathname()
   return (
     <SidebarGroup>
@@ -68,7 +68,7 @@ function ActionsMenu({ items, ...props }: { items: { title: string, icon: Lucide
   )
 }
 
-function DashboardMenu({ items, ...props }: { items: { title: string, icon: LucideIcon, href: string }[] } & React.ComponentProps<typeof SidebarGroup>) {
+function DashboardMenu({ items }: { items: { title: string, icon: LucideIcon, href: string }[] }) {
   const pathname = usePathname()
   return (
     <SidebarGroup>

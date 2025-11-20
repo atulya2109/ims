@@ -19,7 +19,6 @@ export async function POST(request: Request) {
     const db = await getDb();
     const equipmentsCollection = db.collection("equipments");
     const checkinsCollection = db.collection("checkins");
-    const checkoutsCollection = db.collection("checkouts");
 
     const { userId, project, items }: CheckinRequest = await request.json();
 
@@ -84,7 +83,7 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const db = await getDb();
     const collection = db.collection("checkins");

@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:8.0
+    container_name: ims-mongodb-prod
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-password}
+      MONGO_INITDB_DATABASE: ${MONGODB_DB:-ims}
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - ims-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ims-app:latest
+    container_name: ims-app-prod
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/${MONGODB_DB:-ims}?authSource=admin
+      MONGODB_DB: ${MONGODB_DB:-ims}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - ims-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  webhook-listener:
+    build:
+      context: ./webhook-listener
+      dockerfile: Dockerfile
+    image: ims-webhook-listener:latest
+    container_name: ims-webhook-listener
+    restart: unless-stopped
+    ports:
+      - "${WEBHOOK_PORT:-9000}:9000"
+    environment:
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET}
+      DEPLOY_SCRIPT_PATH: /app/deploy.sh
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./deploy.sh:/app/deploy.sh:ro
+      - ./:/app/project:ro
+    networks:
+      - ims-network
+
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
+
+networks:
+  ims-network:
+    driver: bridge

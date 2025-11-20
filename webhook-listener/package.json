@@ -1,0 +1,13 @@
+{
+  "name": "ims-webhook-listener",
+  "version": "1.0.0",
+  "description": "Webhook listener for IMS auto-deployment",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "body-parser": "^1.20.2"
+  }
+}

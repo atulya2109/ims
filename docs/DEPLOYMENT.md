@@ -47,7 +47,7 @@ git checkout main
 
 ```bash
 # Copy the example environment file
-cp .env.production.example .env
+cp deployment/.env.production.example .env
 
 # Generate secure passwords
 MONGO_PASSWORD=$(openssl rand -base64 32)
@@ -73,7 +73,7 @@ WEBHOOK_PORT=9000
 ### 3. Make Deploy Script Executable
 
 ```bash
-chmod +x deploy.sh
+chmod +x deployment/scripts/deploy.sh
 ```
 
 ### 4. Initial Deployment
@@ -82,13 +82,13 @@ Start the services for the first time:
 
 ```bash
 # Build and start all services
-docker-compose -f docker-compose.prod.yml up -d
+docker-compose -f deployment/docker/docker-compose.prod.yml up -d
 
 # Check logs
-docker-compose -f docker-compose.prod.yml logs -f
+docker-compose -f deployment/docker/docker-compose.prod.yml logs -f
 
 # Verify services are running
-docker-compose -f docker-compose.prod.yml ps
+docker-compose -f deployment/docker/docker-compose.prod.yml ps
 ```
 
 You should see three containers running:
@@ -144,7 +144,7 @@ If you prefer webhook-based deployment instead of GitHub Actions:
 GitHub will send a ping event. Check your webhook listener logs:
 
 ```bash
-docker-compose -f docker-compose.prod.yml logs webhook-listener
+docker-compose -f deployment/docker/docker-compose.prod.yml logs webhook-listener
 ```
 
 You should see: `Ping received`
@@ -192,10 +192,10 @@ On your NAS:
 tail -f /var/log/ims-deploy.log
 
 # Or watch webhook listener logs
-docker-compose -f docker-compose.prod.yml logs -f webhook-listener
+docker-compose -f deployment/docker/docker-compose.prod.yml logs -f webhook-listener
 
 # Or watch application logs
-docker-compose -f docker-compose.prod.yml logs -f app
+docker-compose -f deployment/docker/docker-compose.prod.yml logs -f app
 ```
 
 ### Manual Deployment
@@ -205,7 +205,7 @@ You can also trigger deployment manually:
 ```bash
 # On your NAS
 cd /opt/ims
-./deploy.sh
+./deployment/scripts/deploy.sh
 ```
 
 Or trigger the GitHub Action manually:
@@ -224,9 +224,9 @@ When you push to main:
 
 2. **Webhook Listener** on NAS receives the webhook:
    - Verifies the signature
-   - Triggers `deploy.sh`
+   - Triggers `deployment/scripts/deploy.sh`
 
-3. **Deploy Script** (`deploy.sh`):
+3. **Deploy Script** (`deployment/scripts/deploy.sh`):
    - Pulls latest code from GitHub
    - Builds new Docker images
    - Gracefully stops old containers
@@ -244,7 +244,7 @@ When you push to main:
 
 Check webhook listener logs:
 ```bash
-docker-compose -f docker-compose.prod.yml logs webhook-listener
+docker-compose -f deployment/docker/docker-compose.prod.yml logs webhook-listener
 ```
 
 Common issues:
@@ -269,7 +269,7 @@ Common issues:
 
 Check application logs:
 ```bash
-docker-compose -f docker-compose.prod.yml logs app
+docker-compose -f deployment/docker/docker-compose.prod.yml logs app
 ```
 
 Common issues:
@@ -281,7 +281,7 @@ Common issues:
 
 Check MongoDB logs:
 ```bash
-docker-compose -f docker-compose.prod.yml logs mongodb
+docker-compose -f deployment/docker/docker-compose.prod.yml logs mongodb
 ```
 
 Verify connection:
@@ -305,22 +305,22 @@ If it returns 503, check:
 
 ### View All Logs
 ```bash
-docker-compose -f docker-compose.prod.yml logs -f
+docker-compose -f deployment/docker/docker-compose.prod.yml logs -f
 ```
 
 ### Restart Services
 ```bash
-docker-compose -f docker-compose.prod.yml restart
+docker-compose -f deployment/docker/docker-compose.prod.yml restart
 ```
 
 ### Stop All Services
 ```bash
-docker-compose -f docker-compose.prod.yml down
+docker-compose -f deployment/docker/docker-compose.prod.yml down
 ```
 
 ### View Running Containers
 ```bash
-docker-compose -f docker-compose.prod.yml ps
+docker-compose -f deployment/docker/docker-compose.prod.yml ps
 ```
 
 ### Access MongoDB Shell
@@ -338,7 +338,7 @@ git log --oneline -10
 ```bash
 cd /opt/ims
 git checkout <previous-commit-hash>
-./deploy.sh
+./deployment/scripts/deploy.sh
 ```
 
 ## Security Best Practices

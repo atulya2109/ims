@@ -23,8 +23,8 @@ services:
 
   app:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../../
+      dockerfile: deployment/docker/Dockerfile
     image: ims-app:latest
     container_name: ims-app-prod
     restart: unless-stopped
@@ -48,7 +48,7 @@ services:
 
   webhook-listener:
     build:
-      context: ./webhook-listener
+      context: ../webhook-listener
       dockerfile: Dockerfile
     image: ims-webhook-listener:latest
     container_name: ims-webhook-listener
@@ -60,8 +60,8 @@ services:
       DEPLOY_SCRIPT_PATH: /app/deploy.sh
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./deploy.sh:/app/deploy.sh:ro
-      - ./:/app/project:ro
+      - ../scripts/deploy.sh:/app/deploy.sh:ro
+      - ../../:/app/project:ro
     networks:
       - ims-network
 

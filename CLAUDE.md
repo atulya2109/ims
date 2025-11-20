@@ -5,10 +5,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Commands
 
 ### Local Development (Docker)
-- `docker-compose up -d` - Start MongoDB container in background
-- `docker-compose down` - Stop MongoDB container
-- `docker-compose logs mongodb` - View MongoDB logs
-- `docker-compose restart mongodb` - Restart MongoDB container
+- `docker-compose -f deployment/docker/docker-compose.dev.yml up -d` - Start MongoDB container in background
+- `docker-compose -f deployment/docker/docker-compose.dev.yml down` - Stop MongoDB container
+- `docker-compose -f deployment/docker/docker-compose.dev.yml logs mongodb` - View MongoDB logs
+- `docker-compose -f deployment/docker/docker-compose.dev.yml restart mongodb` - Restart MongoDB container
 
 ### Application (Development)
 - `npm run dev --turbopack` - Start development server with Turbopack
@@ -17,12 +17,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run lint` - Run ESLint for code quality checks
 
 ### Production Deployment (NAS)
-- `docker-compose -f docker-compose.prod.yml up -d` - Start all production services
-- `docker-compose -f docker-compose.prod.yml down` - Stop all production services
-- `docker-compose -f docker-compose.prod.yml logs -f` - View all logs
-- `./deploy.sh` - Manual deployment (pulls latest code and redeploys)
+- `docker-compose -f deployment/docker/docker-compose.prod.yml up -d` - Start all production services
+- `docker-compose -f deployment/docker/docker-compose.prod.yml down` - Stop all production services
+- `docker-compose -f deployment/docker/docker-compose.prod.yml logs -f` - View all logs
+- `./deployment/scripts/deploy.sh` - Manual deployment (pulls latest code and redeploys)
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for complete deployment setup instructions.
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for complete deployment setup instructions.
 
 ## Project Architecture
 
@@ -87,14 +87,14 @@ All API routes use the shared `getDb()` function from `@ims/lib/mongodb` for dat
 ### Environment Configuration
 
 **Local Development:**
-1. Copy `.env.local.example` to `.env.local`
-2. Start MongoDB: `docker-compose up -d`
+1. Copy `deployment/.env.local.example` to `.env.local` (in project root)
+2. Start MongoDB: `docker-compose -f deployment/docker/docker-compose.dev.yml up -d`
 3. Default connection: `mongodb://admin:password@localhost:27017/ims?authSource=admin`
 
 **Production Deployment:**
-1. On NAS, copy `.env.production.example` to `.env`
+1. On NAS, copy `deployment/.env.production.example` to `.env` (in project root)
 2. Update credentials and secrets
-3. See [DEPLOYMENT.md](DEPLOYMENT.md) for complete setup
+3. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for complete setup
 
 ### Deployment
 
@@ -104,13 +104,13 @@ The application uses automated CI/CD for deployment:
 - **Health monitoring** → `/api/health` endpoint checks app and database status
 
 Components:
-- `Dockerfile` - Multi-stage build for Next.js app
-- `docker-compose.prod.yml` - Production services (app, MongoDB, webhook listener)
-- `deploy.sh` - Deployment script with zero-downtime updates
+- `deployment/docker/Dockerfile` - Multi-stage build for Next.js app
+- `deployment/docker/docker-compose.prod.yml` - Production services (app, MongoDB, webhook listener)
+- `deployment/scripts/deploy.sh` - Deployment script with zero-downtime updates
 - `.github/workflows/deploy.yml` - GitHub Actions workflow
-- `webhook-listener/` - Service to receive deployment webhooks
+- `deployment/webhook-listener/` - Service to receive deployment webhooks
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for:
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for:
 - Initial NAS setup instructions
 - GitHub configuration (secrets, webhooks)
 - Port forwarding and security

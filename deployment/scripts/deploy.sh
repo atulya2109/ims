@@ -7,7 +7,7 @@ set -e  # Exit on error
 
 # Configuration
 PROJECT_DIR="${PROJECT_DIR:-/opt/ims}"
-COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
+COMPOSE_FILE="${COMPOSE_FILE:-deployment/docker/docker-compose.prod.yml}"
 GIT_BRANCH="${GIT_BRANCH:-main}"
 LOG_FILE="${LOG_FILE:-/var/log/ims-deploy.log}"
 

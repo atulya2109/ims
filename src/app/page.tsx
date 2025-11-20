@@ -51,7 +51,7 @@ export default function Home() {
       <div className="flex-1 p-4">
         <h1 className="text-2xl font-bold">History</h1>
         <Card className="mt-4">
-          <CardContent>
+          <CardContent className="p-6">
             <Table>
               <TableHeader>
                 <TableRow>

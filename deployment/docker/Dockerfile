@@ -18,6 +18,9 @@ COPY . .
 # Set environment variables for build
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
+# Dummy MongoDB variables for build (actual values provided at runtime)
+ENV MONGODB_URI=mongodb://localhost:27017/ims
+ENV MONGODB_DB=ims
 
 # Build the application
 RUN npm run build

@@ -9,7 +9,7 @@ RUN apk add --no-cache bash docker-cli git
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
 # Copy application files
 COPY index.js ./

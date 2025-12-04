@@ -70,13 +70,19 @@ git pull origin "$GIT_BRANCH" || error "Failed to pull changes"
 # Check if .env file exists
 if [ ! -f ".env" ]; then
     warning ".env file not found. Using .env.production.example as template"
-    if [ -f ".env.production.example" ]; then
-        cp .env.production.example .env
+    if [ -f "deployment/.env.production.example" ]; then
+        cp deployment/.env.production.example .env
         log "Please update .env file with your production values"
     else
         error "No .env.production.example found. Cannot proceed."
     fi
 fi
+
+# Load environment variables from .env file
+log "Loading environment variables from .env file..."
+set -a
+source .env
+set +a
 
 # Build new images
 log "Building Docker images..."

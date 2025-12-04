@@ -6,10 +6,10 @@
 set -e  # Exit on error
 
 # Configuration
-PROJECT_DIR="${PROJECT_DIR:-/opt/ims}"
-COMPOSE_FILE="${COMPOSE_FILE:-deployment/docker/docker-compose.prod.yml}"
-GIT_BRANCH="${GIT_BRANCH:-main}"
-LOG_FILE="${LOG_FILE:-/var/log/ims-deploy.log}"
+PROJECT_DIR="${PROJECT_DIR}"
+COMPOSE_FILE="${COMPOSE_FILE}"
+GIT_BRANCH="${GIT_BRANCH}"
+LOG_FILE="${LOG_FILE}"
 
 # Colors for output
 RED='\033[0;31m'

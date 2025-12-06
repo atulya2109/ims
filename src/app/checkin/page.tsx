@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -53,6 +53,26 @@ export default function CheckinPage() {
       (equipment.quantity - equipment.available) > 0 // Only show equipment that has items checked out
   );
 
+  const addItemToCheckin = useCallback((equipment: Equipment, quantity: number = 1) => {
+    const existingItem = selectedItems.find((item) => item.id === equipment.id);
+    const maxAvailable = equipment.quantity - equipment.available; // Max that can be checked in
+
+    if (existingItem) {
+      // If item already exists, don't add it again for unique items
+      if (equipment.unique) return;
+      // For multiple items, update the quantity
+      setSelectedItems((prev) =>
+        prev.map((item) =>
+          item.id === equipment.id
+            ? { ...item, checkinQuantity: Math.min((item.checkinQuantity || 0) + quantity, maxAvailable) }
+            : item
+        )
+      );
+      return;
+    }
+    setSelectedItems((prev) => [...prev, { ...equipment, checkinQuantity: quantity }]);
+  }, [selectedItems]);
+
   useEffect(() => {
     // Timeout can be used to clear buffer if typing is too slow (optional)
     let clearBufferTimeout: NodeJS.Timeout;
@@ -67,7 +87,20 @@ export default function CheckinPage() {
         if (scannedCode) {
           console.log("Scanned code:", scannedCode);
           setScannedCode(scannedCode);
-          // Here, you can trigger your check-in logic with the scanned code.
+
+          // Find the equipment by ID (QR code contains equipment ID)
+          const equipment = equipments.find((eq) => eq.id === scannedCode);
+          if (equipment) {
+            // Check if equipment has items checked out
+            const checkedOutQuantity = equipment.quantity - equipment.available;
+            if (checkedOutQuantity > 0) {
+              addItemToCheckin(equipment, 1);
+            } else {
+              alert(`"${equipment.name}" has no items checked out to check in.`);
+            }
+          } else {
+            alert(`Equipment not found for scanned code: ${scannedCode}`);
+          }
         }
         // Reset the buffer.
         scannedCodeRef.current = "";
@@ -88,27 +121,7 @@ export default function CheckinPage() {
       document.removeEventListener("keydown", handleKeyDown);
       clearTimeout(clearBufferTimeout);
     };
-  }, []);
-
-  const addItemToCheckin = (equipment: Equipment, quantity: number = 1) => {
-    const existingItem = selectedItems.find((item) => item.id === equipment.id);
-    const maxAvailable = equipment.quantity - equipment.available; // Max that can be checked in
-
-    if (existingItem) {
-      // If item already exists, don't add it again for unique items
-      if (equipment.unique) return;
-      // For multiple items, update the quantity
-      setSelectedItems((prev) =>
-        prev.map((item) =>
-          item.id === equipment.id
-            ? { ...item, checkinQuantity: Math.min((item.checkinQuantity || 0) + quantity, maxAvailable) }
-            : item
-        )
-      );
-      return;
-    }
-    setSelectedItems((prev) => [...prev, { ...equipment, checkinQuantity: quantity }]);
-  };
+  }, [equipments, addItemToCheckin]);
 
   const updateItemQuantity = (equipmentId: string, newQuantity: number) => {
     if (newQuantity <= 0) {

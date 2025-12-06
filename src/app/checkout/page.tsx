@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -51,6 +51,25 @@ export default function CheckoutPage() {
       equipment.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       equipment.location.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const addItemToCheckout = useCallback((equipment: Equipment, quantity: number = 1) => {
+    const existingItem = selectedItems.find((item) => item.id === equipment.id);
+    if (existingItem) {
+      // If item already exists, don't add it again for unique items
+      if (equipment.unique) return;
+      // For multiple items, update the quantity
+      setSelectedItems((prev) =>
+        prev.map((item) =>
+          item.id === equipment.id
+            ? { ...item, checkoutQuantity: Math.min((item.checkoutQuantity || 0) + quantity, item.available) }
+            : item
+        )
+      );
+      return;
+    }
+    setSelectedItems((prev) => [...prev, { ...equipment, checkoutQuantity: quantity }]);
+  }, [selectedItems]);
+
   useEffect(() => {
     // Timeout can be used to clear buffer if typing is too slow (optional)
     let clearBufferTimeout: NodeJS.Timeout;
@@ -65,8 +84,19 @@ export default function CheckoutPage() {
         if (scannedCode) {
           console.log("Scanned code:", scannedCode);
           setScannedCode(scannedCode);
-          // Here, you can trigger your checkout logic with the scanned code.
-          // For example, add the scanned item to your checkout list.
+
+          // Find the equipment by ID (QR code contains equipment ID)
+          const equipment = equipments.find((eq) => eq.id === scannedCode);
+          if (equipment) {
+            // Check if equipment has items available to check out
+            if (equipment.available > 0) {
+              addItemToCheckout(equipment, 1);
+            } else {
+              alert(`"${equipment.name}" has no items available to check out.`);
+            }
+          } else {
+            alert(`Equipment not found for scanned code: ${scannedCode}`);
+          }
         }
         // Reset the buffer.
         scannedCodeRef.current = "";
@@ -87,25 +117,7 @@ export default function CheckoutPage() {
       document.removeEventListener("keydown", handleKeyDown);
       clearTimeout(clearBufferTimeout);
     };
-  }, []);
-
-  const addItemToCheckout = (equipment: Equipment, quantity: number = 1) => {
-    const existingItem = selectedItems.find((item) => item.id === equipment.id);
-    if (existingItem) {
-      // If item already exists, don't add it again for unique items
-      if (equipment.unique) return;
-      // For multiple items, update the quantity
-      setSelectedItems((prev) =>
-        prev.map((item) =>
-          item.id === equipment.id
-            ? { ...item, checkoutQuantity: Math.min((item.checkoutQuantity || 0) + quantity, item.available) }
-            : item
-        )
-      );
-      return;
-    }
-    setSelectedItems((prev) => [...prev, { ...equipment, checkoutQuantity: quantity }]);
-  };
+  }, [equipments, addItemToCheckout]);
 
   const updateItemQuantity = (equipmentId: string, newQuantity: number) => {
     if (newQuantity <= 0) {

@@ -1,35 +1,64 @@
 import { getDb } from "@ims/lib/mongodb";
 import { v4 as uuidv4 } from 'uuid';
+import { logApiRequest, logApiResponse, logError, logDatabaseOperation } from "@ims/lib/logger";
 
 export async function GET() {
-    const db = await getDb();
-    const collection = db.collection("equipments");
+    const startTime = Date.now();
+    logApiRequest("GET", "/api/equipments");
 
-    // Fetch all equipment items from the database
-    const equipments = await collection.find({}).toArray();
-    return new Response(JSON.stringify(equipments), { status: 200 });
+    try {
+        const db = await getDb();
+        const collection = db.collection("equipments");
+
+        const dbStart = Date.now();
+        // Fetch all equipment items from the database
+        const equipments = await collection.find({}).toArray();
+        logDatabaseOperation("find", "equipments", Date.now() - dbStart, { count: equipments.length });
+
+        const duration = Date.now() - startTime;
+        logApiResponse("GET", "/api/equipments", 200, duration, { count: equipments.length });
+        return new Response(JSON.stringify(equipments), { status: 200 });
+    } catch (error) {
+        logError(error, { method: "GET", path: "/api/equipments" });
+        return new Response(JSON.stringify({ error: "Internal server error" }), { status: 500 });
+    }
 }
 
 export async function POST(request: Request) {
-    const db = await getDb();
-    const collection = db.collection("equipments");
+    const startTime = Date.now();
+    logApiRequest("POST", "/api/equipments");
 
-    const { name, location, quantity, unique, available } = await request.json();
-    const id = uuidv4();
+    try {
+        const db = await getDb();
+        const collection = db.collection("equipments");
 
-    const result = await collection.insertOne({
-        id,
-        name,
-        location,
-        unique,
-        quantity,
-        available
-    });
+        const { name, location, quantity, unique, available } = await request.json();
+        const id = uuidv4();
 
-    return new Response(JSON.stringify(result), { status: 200 });
+        const dbStart = Date.now();
+        const result = await collection.insertOne({
+            id,
+            name,
+            location,
+            unique,
+            quantity,
+            available
+        });
+        logDatabaseOperation("insertOne", "equipments", Date.now() - dbStart, { equipmentId: id, name });
+
+        const duration = Date.now() - startTime;
+        logApiResponse("POST", "/api/equipments", 200, duration, { equipmentId: id, name });
+        return new Response(JSON.stringify(result), { status: 200 });
+    } catch (error) {
+        logError(error, { method: "POST", path: "/api/equipments" });
+        return new Response(JSON.stringify({ error: "Internal server error" }), { status: 500 });
+    }
 }
 
 export async function PUT(request: Request) {
+    const startTime = Date.now();
+    logApiRequest("PUT", "/api/equipments");
+
     try {
         const db = await getDb();
         const collection = db.collection("equipments");
@@ -38,6 +67,7 @@ export async function PUT(request: Request) {
 
         // Validate required fields
         if (!id || !name || !location || quantity === undefined || available === undefined) {
+            logApiResponse("PUT", "/api/equipments", 400, Date.now() - startTime, { error: "Missing required fields" });
             return new Response(
                 JSON.stringify({ error: "Missing required fields" }),
                 { status: 400 }
@@ -46,12 +76,14 @@ export async function PUT(request: Request) {
 
         // Validate that available <= quantity
         if (available > quantity) {
+            logApiResponse("PUT", "/api/equipments", 400, Date.now() - startTime, { error: "Available > quantity" });
             return new Response(
                 JSON.stringify({ error: "Available quantity cannot exceed total quantity" }),
                 { status: 400 }
             );
         }
 
+        const dbStart = Date.now();
         const result = await collection.updateOne(
             { id },
             {
@@ -64,14 +96,18 @@ export async function PUT(request: Request) {
                 }
             }
         );
+        logDatabaseOperation("updateOne", "equipments", Date.now() - dbStart, { equipmentId: id, name });
 
         if (result.matchedCount === 0) {
+            logApiResponse("PUT", "/api/equipments", 404, Date.now() - startTime, { equipmentId: id });
             return new Response(
                 JSON.stringify({ error: "Equipment not found" }),
                 { status: 404 }
             );
         }
 
+        const duration = Date.now() - startTime;
+        logApiResponse("PUT", "/api/equipments", 200, duration, { equipmentId: id, name, modified: result.modifiedCount });
         return new Response(
             JSON.stringify({
                 success: true,
@@ -81,7 +117,7 @@ export async function PUT(request: Request) {
             { status: 200 }
         );
     } catch (error) {
-        console.error("Error updating equipment:", error);
+        logError(error, { method: "PUT", path: "/api/equipments" });
         return new Response(
             JSON.stringify({ error: "Internal server error" }),
             { status: 500 }
@@ -90,13 +126,25 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-    const db = await getDb();
-    const collection = db.collection("equipments");
+    const startTime = Date.now();
+    logApiRequest("DELETE", "/api/equipments");
 
-    const { items } = await request.json();
+    try {
+        const db = await getDb();
+        const collection = db.collection("equipments");
 
-    // Delete the selected items from the database
-    const result = await collection.deleteMany({ id: { $in: items } });
+        const { items } = await request.json();
 
-    return new Response(JSON.stringify(result), { status: 200 });
+        const dbStart = Date.now();
+        // Delete the selected items from the database
+        const result = await collection.deleteMany({ id: { $in: items } });
+        logDatabaseOperation("deleteMany", "equipments", Date.now() - dbStart, { itemCount: items.length, deletedCount: result.deletedCount });
+
+        const duration = Date.now() - startTime;
+        logApiResponse("DELETE", "/api/equipments", 200, duration, { itemCount: items.length, deletedCount: result.deletedCount });
+        return new Response(JSON.stringify(result), { status: 200 });
+    } catch (error) {
+        logError(error, { method: "DELETE", path: "/api/equipments" });
+        return new Response(JSON.stringify({ error: "Internal server error" }), { status: 500 });
+    }
 }

@@ -5,11 +5,11 @@
 
 set -e  # Exit on error
 
-# Configuration
-PROJECT_DIR="${PROJECT_DIR}"
-COMPOSE_FILE="${COMPOSE_FILE}"
-GIT_BRANCH="${GIT_BRANCH}"
-LOG_FILE="${LOG_FILE}"
+# Configuration (with defaults)
+PROJECT_DIR="${PROJECT_DIR:-/opt/ims}"
+COMPOSE_FILE="${COMPOSE_FILE:-deployment/docker/docker-compose.prod.yml}"
+GIT_BRANCH="${GIT_BRANCH:-main}"
+LOG_FILE="${LOG_FILE:-/var/log/ims-deploy.log}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -77,12 +77,6 @@ if [ ! -f ".env" ]; then
         error "No .env.production.example found. Cannot proceed."
     fi
 fi
-
-# Load environment variables from .env file
-log "Loading environment variables from .env file..."
-set -a
-source .env
-set +a
 
 # Build new images
 log "Building Docker images..."

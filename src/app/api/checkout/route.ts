@@ -1,5 +1,6 @@
 import { getDb } from "@ims/lib/mongodb";
 import { v4 as uuidv4 } from 'uuid';
+import { logApiRequest, logApiResponse, logError, logDatabaseOperation } from "@ims/lib/logger";
 
 interface CheckoutItem {
   id: string;
@@ -14,6 +15,9 @@ interface CheckoutRequest {
 }
 
 export async function POST(request: Request) {
+  const startTime = Date.now();
+  logApiRequest("POST", "/api/checkout");
+
   try {
     const db = await getDb();
     const equipmentsCollection = db.collection("equipments");
@@ -23,6 +27,7 @@ export async function POST(request: Request) {
 
     // Validate request
     if (!userId || !project || !items || items.length === 0) {
+      logApiResponse("POST", "/api/checkout", 400, Date.now() - startTime, { error: "Missing required fields" });
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
         { status: 400 }
@@ -47,6 +52,7 @@ export async function POST(request: Request) {
     // In production, you might want to implement proper transaction handling
 
     try {
+      const dbStart = Date.now();
       // Update equipment availability
       for (const item of items) {
         await equipmentsCollection.updateOne(
@@ -59,6 +65,20 @@ export async function POST(request: Request) {
 
       // Insert checkout record
       await checkoutsCollection.insertOne(checkout);
+      logDatabaseOperation("checkout-transaction", "equipments,checkouts", Date.now() - dbStart, {
+        checkoutId,
+        userId,
+        project,
+        itemCount: items.length
+      });
+
+      const duration = Date.now() - startTime;
+      logApiResponse("POST", "/api/checkout", 200, duration, {
+        checkoutId,
+        userId,
+        project,
+        itemCount: items.length
+      });
 
       return new Response(
         JSON.stringify({
@@ -70,7 +90,7 @@ export async function POST(request: Request) {
       );
 
     } catch (operationError) {
-      console.error("Operation failed:", operationError);
+      logError(operationError, { method: "POST", path: "/api/checkout", operation: "database-transaction", userId, project });
       return new Response(
         JSON.stringify({ error: "Checkout failed. Please try again." }),
         { status: 500 }
@@ -78,7 +98,7 @@ export async function POST(request: Request) {
     }
 
   } catch (error) {
-    console.error("Checkout error:", error);
+    logError(error, { method: "POST", path: "/api/checkout" });
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
       { status: 500 }
@@ -87,15 +107,23 @@ export async function POST(request: Request) {
 }
 
 export async function GET() {
+  const startTime = Date.now();
+  logApiRequest("GET", "/api/checkout");
+
   try {
     const db = await getDb();
     const collection = db.collection("checkouts");
 
+    const dbStart = Date.now();
     // Fetch all checkout records
     const checkouts = await collection.find({}).sort({ checkoutDate: -1 }).toArray();
+    logDatabaseOperation("find", "checkouts", Date.now() - dbStart, { count: checkouts.length });
+
+    const duration = Date.now() - startTime;
+    logApiResponse("GET", "/api/checkout", 200, duration, { count: checkouts.length });
     return new Response(JSON.stringify(checkouts), { status: 200 });
   } catch (error) {
-    console.error("Error fetching checkouts:", error);
+    logError(error, { method: "GET", path: "/api/checkout" });
     return new Response(
       JSON.stringify({ error: "Failed to fetch checkouts" }),
       { status: 500 }

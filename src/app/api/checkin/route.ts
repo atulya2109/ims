@@ -1,5 +1,6 @@
 import { getDb } from "@ims/lib/mongodb";
 import { v4 as uuidv4 } from 'uuid';
+import { logApiRequest, logApiResponse, logError, logDatabaseOperation } from "@ims/lib/logger";
 
 interface CheckinItem {
   id: string;
@@ -15,6 +16,9 @@ interface CheckinRequest {
 }
 
 export async function POST(request: Request) {
+  const startTime = Date.now();
+  logApiRequest("POST", "/api/checkin");
+
   try {
     const db = await getDb();
     const equipmentsCollection = db.collection("equipments");
@@ -24,6 +28,7 @@ export async function POST(request: Request) {
 
     // Validate request
     if (!userId || !project || !items || items.length === 0) {
+      logApiResponse("POST", "/api/checkin", 400, Date.now() - startTime, { error: "Missing required fields" });
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
         { status: 400 }
@@ -44,6 +49,7 @@ export async function POST(request: Request) {
     };
 
     try {
+      const dbStart = Date.now();
       // Update equipment availability (add back to inventory)
       for (const item of items) {
         await equipmentsCollection.updateOne(
@@ -56,6 +62,20 @@ export async function POST(request: Request) {
 
       // Insert check-in record
       await checkinsCollection.insertOne(checkin);
+      logDatabaseOperation("checkin-transaction", "equipments,checkins", Date.now() - dbStart, {
+        checkinId,
+        userId,
+        project,
+        itemCount: items.length
+      });
+
+      const duration = Date.now() - startTime;
+      logApiResponse("POST", "/api/checkin", 200, duration, {
+        checkinId,
+        userId,
+        project,
+        itemCount: items.length
+      });
 
       return new Response(
         JSON.stringify({
@@ -67,7 +87,7 @@ export async function POST(request: Request) {
       );
 
     } catch (operationError) {
-      console.error("Check-in operation failed:", operationError);
+      logError(operationError, { method: "POST", path: "/api/checkin", operation: "database-transaction", userId, project });
       return new Response(
         JSON.stringify({ error: "Check-in failed. Please try again." }),
         { status: 500 }
@@ -75,7 +95,7 @@ export async function POST(request: Request) {
     }
 
   } catch (error) {
-    console.error("Check-in error:", error);
+    logError(error, { method: "POST", path: "/api/checkin" });
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
       { status: 500 }
@@ -84,15 +104,23 @@ export async function POST(request: Request) {
 }
 
 export async function GET() {
+  const startTime = Date.now();
+  logApiRequest("GET", "/api/checkin");
+
   try {
     const db = await getDb();
     const collection = db.collection("checkins");
 
+    const dbStart = Date.now();
     // Fetch all check-in records
     const checkins = await collection.find({}).sort({ checkinDate: -1 }).toArray();
+    logDatabaseOperation("find", "checkins", Date.now() - dbStart, { count: checkins.length });
+
+    const duration = Date.now() - startTime;
+    logApiResponse("GET", "/api/checkin", 200, duration, { count: checkins.length });
     return new Response(JSON.stringify(checkins), { status: 200 });
   } catch (error) {
-    console.error("Error fetching check-ins:", error);
+    logError(error, { method: "GET", path: "/api/checkin" });
     return new Response(
       JSON.stringify({ error: "Failed to fetch check-ins" }),
       { status: 500 }

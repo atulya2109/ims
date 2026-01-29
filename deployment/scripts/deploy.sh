@@ -78,12 +78,13 @@ LOCAL=$(git rev-parse @)
 REMOTE=$(git rev-parse "@{u}")
 
 if [ "$LOCAL" = "$REMOTE" ]; then
-    log "Already up to date. No deployment needed."
-    exit 0
+    log "Already up to date."
+else
+    log "New changes detected. Pulling..."
+    git pull origin "$GIT_BRANCH" || error "Failed to pull changes"
 fi
 
-log "New changes detected. Proceeding with deployment..."
-git pull origin "$GIT_BRANCH" || error "Failed to pull changes"
+log "Proceeding with deployment..."
 
 # Check if .env file was created (if not, create from template)
 if [ ! -f ".env" ]; then

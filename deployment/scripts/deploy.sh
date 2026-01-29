@@ -30,7 +30,11 @@ if [ -f ".env" ]; then
 fi
 
 # Set LOG_FILE default (uses value from .env if present)
-LOG_FILE="${LOG_FILE:-/var/log/ims-deploy.log}"
+LOG_FILE="${LOG_FILE:-$PROJECT_DIR/deploy.log}"
+
+# Create log directory if needed
+LOG_DIR=$(dirname "$LOG_FILE")
+mkdir -p "$LOG_DIR"
 
 # Colors for output
 RED='\033[0;31m'

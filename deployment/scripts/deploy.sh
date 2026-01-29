@@ -9,10 +9,27 @@ set -e  # Exit on error
 PROJECT_DIR="${PROJECT_DIR:-/opt/ims}"
 COMPOSE_FILE="${COMPOSE_FILE:-deployment/docker/docker-compose.prod.yml}"
 GIT_BRANCH="${GIT_BRANCH:-main}"
-LOG_FILE="${LOG_FILE:-/var/log/ims-deploy.log}"
 
 # Use docker compose v2
 DOCKER_COMPOSE="docker compose"
+
+# Check if running in project directory
+if [ ! -d "$PROJECT_DIR" ]; then
+    echo "ERROR: Project directory $PROJECT_DIR does not exist"
+    exit 1
+fi
+
+cd "$PROJECT_DIR" || { echo "ERROR: Failed to change to project directory"; exit 1; }
+
+# Load environment variables first (before logging setup)
+if [ -f ".env" ]; then
+    set -a
+    source .env
+    set +a
+fi
+
+# Set LOG_FILE default (uses value from .env if present)
+LOG_FILE="${LOG_FILE:-/var/log/ims-deploy.log}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -39,13 +56,6 @@ log "========================================="
 log "Starting deployment process..."
 log "========================================="
 
-# Check if running in project directory
-if [ ! -d "$PROJECT_DIR" ]; then
-    error "Project directory $PROJECT_DIR does not exist"
-fi
-
-cd "$PROJECT_DIR" || error "Failed to change to project directory"
-
 # Ensure we're on the correct branch
 log "Checking git branch..."
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
@@ -70,22 +80,20 @@ fi
 log "New changes detected. Proceeding with deployment..."
 git pull origin "$GIT_BRANCH" || error "Failed to pull changes"
 
-# Check if .env file exists
+# Check if .env file was created (if not, create from template)
 if [ ! -f ".env" ]; then
     warning ".env file not found. Using .env.production.example as template"
     if [ -f "deployment/.env.production.example" ]; then
         cp deployment/.env.production.example .env
-        log "Please update .env file with your production values"
+        log "Created .env from template. Please update with your production values"
+        # Reload environment variables after creating .env
+        set -a
+        source .env
+        set +a
     else
         error "No .env.production.example found. Cannot proceed."
     fi
 fi
-
-# Load environment variables
-log "Loading environment variables..."
-set -a
-source .env
-set +a
 
 # Build new images
 log "Building Docker images..."

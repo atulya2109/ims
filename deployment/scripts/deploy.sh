@@ -5,8 +5,9 @@
 
 set -e  # Exit on error
 
-# Configuration (with defaults)
-PROJECT_DIR="${PROJECT_DIR:-/opt/ims}"
+# Detect project directory (use script location if PROJECT_DIR not set)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="${PROJECT_DIR:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
 COMPOSE_FILE="${COMPOSE_FILE:-deployment/docker/docker-compose.prod.yml}"
 GIT_BRANCH="${GIT_BRANCH:-main}"
 

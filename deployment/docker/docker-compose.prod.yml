@@ -12,6 +12,11 @@ services:
       - mongodb_config:/data/configdb
     networks:
       - ims-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
       interval: 10s
@@ -39,6 +44,11 @@ services:
         condition: service_healthy
     networks:
       - ims-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test:
         [

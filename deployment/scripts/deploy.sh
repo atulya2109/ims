@@ -36,6 +36,21 @@ LOG_FILE="${LOG_FILE:-$PROJECT_DIR/deploy.log}"
 LOG_DIR=$(dirname "$LOG_FILE")
 mkdir -p "$LOG_DIR"
 
+# Rotate log file if it exceeds 10MB
+if [ -f "$LOG_FILE" ]; then
+    LOG_SIZE=$(stat -f%z "$LOG_FILE" 2>/dev/null || stat -c%s "$LOG_FILE" 2>/dev/null || echo 0)
+    MAX_LOG_SIZE=$((10 * 1024 * 1024))  # 10MB
+
+    if [ "$LOG_SIZE" -gt "$MAX_LOG_SIZE" ]; then
+        # Keep last 3 rotated logs
+        [ -f "$LOG_FILE.3" ] && rm -f "$LOG_FILE.3"
+        [ -f "$LOG_FILE.2" ] && mv "$LOG_FILE.2" "$LOG_FILE.3"
+        [ -f "$LOG_FILE.1" ] && mv "$LOG_FILE.1" "$LOG_FILE.2"
+        mv "$LOG_FILE" "$LOG_FILE.1"
+        touch "$LOG_FILE"
+    fi
+fi
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'

@@ -54,25 +54,6 @@ services:
       retries: 3
       start_period: 40s
 
-  webhook-listener:
-    build:
-      context: ../webhook-listener
-      dockerfile: Dockerfile
-    image: ims-webhook-listener:latest
-    container_name: ims-webhook-listener
-    restart: unless-stopped
-    ports:
-      - "${WEBHOOK_PORT:-9000}:9000"
-    environment:
-      WEBHOOK_SECRET: ${WEBHOOK_SECRET}
-      DEPLOY_SCRIPT_PATH: /app/deploy.sh
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ../scripts/deploy.sh:/app/deploy.sh:ro
-      - ../../:/app/project:ro
-    networks:
-      - ims-network
-
 volumes:
   mongodb_data:
     driver: local

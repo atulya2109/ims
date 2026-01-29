@@ -10,13 +10,9 @@ deployment/
 │   ├── Dockerfile                    # Multi-stage production build
 │   ├── .dockerignore                 # Files to exclude from Docker build
 │   ├── docker-compose.dev.yml        # Local development with MongoDB
-│   └── docker-compose.prod.yml       # Production deployment (app + MongoDB + webhook)
+│   └── docker-compose.prod.yml       # Production deployment (app + MongoDB)
 ├── scripts/
 │   └── deploy.sh                     # Automated deployment script
-├── webhook-listener/
-│   ├── Dockerfile                    # Webhook service container
-│   ├── index.js                      # Webhook listener implementation
-│   └── package.json                  # Dependencies
 ├── .env.local.example                # Local development environment template
 └── .env.production.example           # Production environment template
 ```
@@ -58,12 +54,7 @@ docker-compose -f deployment/docker/docker-compose.prod.yml up -d
 - **docker-compose.prod.yml** - Full production stack
 
 ### Scripts
-- **deploy.sh** - Pulls latest code, builds, and deploys with zero downtime
-
-### Webhook Listener
-- Receives webhooks from GitHub Actions
-- Triggers automated deployments
-- Only needed for auto-deployment setup
+- **deploy.sh** - Pulls latest code, builds, and deploys
 
 ### Environment Templates
 - **.env.local.example** - Development defaults

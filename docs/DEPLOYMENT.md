@@ -5,8 +5,7 @@ This guide explains how to set up automatic deployment of the IMS application to
 ## Table of Contents
 - [Prerequisites](#prerequisites)
 - [Initial NAS Setup](#initial-nas-setup)
-- [GitHub Configuration](#github-configuration)
-- [First Deployment](#first-deployment)
+- [Deployment](#deployment)
 - [Troubleshooting](#troubleshooting)
 
 ## Prerequisites
@@ -18,11 +17,6 @@ This guide explains how to set up automatic deployment of the IMS application to
 - Ports available:
   - `3000` - Application
   - `27017` - MongoDB (internal only)
-  - `9000` - Webhook listener (must be accessible from internet)
-
-### On GitHub
-- Repository: `https://github.com/atulya2109/ims`
-- Admin access to configure webhooks and secrets
 
 ## Initial NAS Setup
 
@@ -49,9 +43,8 @@ git checkout main
 # Copy the example environment file
 cp deployment/.env.production.example .env
 
-# Generate secure passwords
+# Generate secure password
 MONGO_PASSWORD=$(openssl rand -base64 32)
-WEBHOOK_SECRET=$(openssl rand -hex 32)
 
 # Edit the .env file with your values
 nano .env
@@ -64,11 +57,7 @@ MONGO_ROOT_PASSWORD=<use generated password>
 MONGODB_DB=ims
 APP_PORT=3000
 NODE_ENV=production
-WEBHOOK_SECRET=<use generated secret>
-WEBHOOK_PORT=9000
 ```
-
-**Important:** Save the `WEBHOOK_SECRET` value - you'll need it for GitHub configuration.
 
 ### 3. Make Deploy Script Executable
 
@@ -91,10 +80,9 @@ docker-compose -f deployment/docker/docker-compose.prod.yml logs -f
 docker-compose -f deployment/docker/docker-compose.prod.yml ps
 ```
 
-You should see three containers running:
+You should see two containers running:
 - `ims-mongodb-prod` - Database
 - `ims-app-prod` - Application
-- `ims-webhook-listener` - Deployment webhook
 
 ### 5. Test the Application
 
@@ -106,101 +94,11 @@ curl http://localhost:3000/api/health
 # {"status":"healthy","timestamp":"...","database":"connected","environment":"production"}
 ```
 
-## GitHub Configuration
-
-### 1. Add GitHub Secrets
-
-Go to your repository on GitHub:
-`https://github.com/atulya2109/ims/settings/secrets/actions`
-
-Add the following secrets:
-
-1. **WEBHOOK_SECRET**
-   - Value: The webhook secret from your `.env` file
-
-2. **NAS_WEBHOOK_URL**
-   - Value: Your NAS webhook URL (e.g., `http://your-nas-ip:9000` or `https://your-domain.com`)
-   - Note: This must be accessible from the internet
-
-3. **APP_URL** (optional, for health checks)
-   - Value: Your application URL (e.g., `http://your-nas-ip:3000`)
-
-### 2. Configure GitHub Webhook (Alternative to Actions)
-
-If you prefer webhook-based deployment instead of GitHub Actions:
-
-1. Go to: `https://github.com/atulya2109/ims/settings/hooks`
-2. Click "Add webhook"
-3. Configure:
-   - **Payload URL**: `http://your-nas-ip:9000/webhook`
-   - **Content type**: `application/json`
-   - **Secret**: Your `WEBHOOK_SECRET` value
-   - **Events**: Select "Just the push event"
-   - **Active**: Check this box
-4. Click "Add webhook"
-
-### 3. Test the Webhook
-
-GitHub will send a ping event. Check your webhook listener logs:
-
-```bash
-docker-compose -f deployment/docker/docker-compose.prod.yml logs webhook-listener
-```
-
-You should see: `Ping received`
-
-## Port Forwarding (if needed)
-
-If your NAS is behind a router, configure port forwarding:
-
-1. Forward external port `9000` to your NAS IP:port `9000`
-2. Use your public IP or domain in `NAS_WEBHOOK_URL`
-3. Consider using a dynamic DNS service if you don't have a static IP
-
-### Alternative: Reverse Proxy
-
-If you have a reverse proxy (nginx, Caddy, Traefik):
-
-```nginx
-# Example nginx configuration
-location /webhook {
-    proxy_pass http://localhost:9000/webhook;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-}
-```
-
-## First Deployment
-
-### Trigger Automatic Deployment
-
-Simply push changes to the main branch:
-
-```bash
-git add .
-git commit -m "Test deployment"
-git push origin main
-```
-
-### Monitor Deployment
-
-On your NAS:
-
-```bash
-# Watch deployment logs
-tail -f /var/log/ims-deploy.log
-
-# Or watch webhook listener logs
-docker-compose -f deployment/docker/docker-compose.prod.yml logs -f webhook-listener
-
-# Or watch application logs
-docker-compose -f deployment/docker/docker-compose.prod.yml logs -f app
-```
+## Deployment
 
 ### Manual Deployment
 
-You can also trigger deployment manually:
+To deploy updates:
 
 ```bash
 # On your NAS
@@ -208,25 +106,23 @@ cd /opt/ims
 ./deployment/scripts/deploy.sh
 ```
 
-Or trigger the GitHub Action manually:
-1. Go to `https://github.com/atulya2109/ims/actions`
-2. Select "Deploy to NAS"
-3. Click "Run workflow"
+### Monitor Deployment
+
+Watch deployment logs:
+
+```bash
+# Watch deployment logs
+tail -f /var/log/ims-deploy.log
+
+# Or watch application logs
+docker-compose -f deployment/docker/docker-compose.prod.yml logs -f app
+```
 
 ## Deployment Flow
 
-When you push to main:
+When you run the deploy script:
 
-1. **GitHub Actions** runs (`.github/workflows/deploy.yml`):
-   - Runs linting
-   - Builds the application
-   - Sends webhook to your NAS
-
-2. **Webhook Listener** on NAS receives the webhook:
-   - Verifies the signature
-   - Triggers `deployment/scripts/deploy.sh`
-
-3. **Deploy Script** (`deployment/scripts/deploy.sh`):
+1. **Deploy Script** (`deployment/scripts/deploy.sh`):
    - Pulls latest code from GitHub
    - Builds new Docker images
    - Gracefully stops old containers
@@ -234,23 +130,7 @@ When you push to main:
    - Runs health checks
    - Cleans up old images
 
-4. **Health Check** workflow (optional):
-   - Waits 60 seconds
-   - Verifies application is healthy
-
 ## Troubleshooting
-
-### Webhook Not Triggering
-
-Check webhook listener logs:
-```bash
-docker-compose -f deployment/docker/docker-compose.prod.yml logs webhook-listener
-```
-
-Common issues:
-- Port 9000 not accessible from internet
-- Incorrect `WEBHOOK_SECRET`
-- Firewall blocking connections
 
 ### Deployment Failing
 
@@ -344,12 +224,11 @@ git checkout <previous-commit-hash>
 ## Security Best Practices
 
 1. **Use strong passwords** for MongoDB
-2. **Keep WEBHOOK_SECRET secure** - never commit to git
-3. **Use HTTPS** if exposing webhook to internet (consider reverse proxy with SSL)
-4. **Restrict webhook endpoint** to GitHub IP ranges if possible
-5. **Regular backups** of MongoDB data
-6. **Monitor logs** for unauthorized access attempts
-7. **Keep Docker images updated** regularly
+2. **Never commit .env to git** - keep credentials secure
+3. **Regular backups** of MongoDB data
+4. **Monitor logs** for unauthorized access attempts
+5. **Keep Docker images updated** regularly
+6. **Restrict SSH access** to your NAS
 
 ## Backup and Restore
 
@@ -369,13 +248,11 @@ docker exec ims-mongodb-prod mongorestore --username admin --password <password>
 
 For issues or questions:
 1. Check the logs using commands above
-2. Review GitHub Actions runs
-3. Verify environment configuration
-4. Test each component individually
+2. Verify environment configuration
+3. Test each component individually
 
 ## Additional Resources
 
 - [Docker Compose Documentation](https://docs.docker.com/compose/)
-- [GitHub Actions Documentation](https://docs.github.com/en/actions)
 - [MongoDB Docker Documentation](https://hub.docker.com/_/mongo)
 - [Next.js Deployment Documentation](https://nextjs.org/docs/deployment)

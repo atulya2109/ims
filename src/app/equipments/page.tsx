@@ -32,6 +32,7 @@ interface InventoryItem {
     quantity: number;
     available: number;
     unique: boolean;
+    assetId?: string;
 }
 
 
@@ -194,6 +195,7 @@ export default function EquipmentsPage() {
                                     </TableHead>
                                     <TableHead>Product</TableHead>
                                     <TableHead>Location</TableHead>
+                                    <TableHead>Asset ID</TableHead>
                                     <TableHead>Total</TableHead>
                                     <TableHead>Available</TableHead>
                                     <TableHead className="w-24">Actions</TableHead>
@@ -217,6 +219,7 @@ export default function EquipmentsPage() {
                                                 </TableCell>
                                                 <TableCell>{item.name}</TableCell>
                                                 <TableCell>{item.location}</TableCell>
+                                                <TableCell>{item.assetId || "-"}</TableCell>
                                                 <TableCell>{item.quantity}</TableCell>
                                                 <TableCell>{item.available}</TableCell>
                                                 <TableCell>

@@ -27,6 +27,7 @@ const equipmentSchema = z.object({
   quantity: z.number().min(1, "Quantity must be at least 1"),
   available: z.number().min(0, "Available quantity cannot be negative"),
   unique: z.boolean(),
+  assetId: z.string().optional(),
 }).refine((data) => data.available <= data.quantity, {
   message: "Available quantity cannot exceed total quantity",
   path: ["available"],
@@ -39,6 +40,7 @@ interface Equipment {
   quantity: number;
   available: number;
   unique: boolean;
+  assetId?: string;
 }
 
 interface EditEquipmentDialogProps {
@@ -59,6 +61,7 @@ export function EditEquipmentDialog({ equipment, isOpen, onClose, onSave }: Edit
       quantity: equipment?.quantity || 1,
       available: equipment?.available || 0,
       unique: equipment?.unique || false,
+      assetId: equipment?.assetId || "",
     },
   });
 
@@ -71,6 +74,7 @@ export function EditEquipmentDialog({ equipment, isOpen, onClose, onSave }: Edit
         quantity: equipment.quantity,
         available: equipment.available,
         unique: equipment.unique,
+        assetId: equipment.assetId || "",
       });
     }
   }, [equipment, form]);
@@ -142,6 +146,19 @@ export function EditEquipmentDialog({ equipment, isOpen, onClose, onSave }: Edit
                   <FormLabel>Location</FormLabel>
                   <FormControl>
                     <Input placeholder="Enter location" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="assetId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Asset ID (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter university asset ID" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

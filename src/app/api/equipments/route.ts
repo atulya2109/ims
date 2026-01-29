@@ -32,7 +32,7 @@ export async function POST(request: Request) {
         const db = await getDb();
         const collection = db.collection("equipments");
 
-        const { name, location, quantity, unique, available } = await request.json();
+        const { name, location, quantity, unique, available, assetId } = await request.json();
         const id = uuidv4();
 
         const dbStart = Date.now();
@@ -42,7 +42,8 @@ export async function POST(request: Request) {
             location,
             unique,
             quantity,
-            available
+            available,
+            ...(assetId && { assetId })
         });
         logDatabaseOperation("insertOne", "equipments", Date.now() - dbStart, { equipmentId: id, name });
 
@@ -63,7 +64,7 @@ export async function PUT(request: Request) {
         const db = await getDb();
         const collection = db.collection("equipments");
 
-        const { id, name, location, quantity, available, unique } = await request.json();
+        const { id, name, location, quantity, available, unique, assetId } = await request.json();
 
         // Validate required fields
         if (!id || !name || !location || quantity === undefined || available === undefined) {
@@ -84,17 +85,26 @@ export async function PUT(request: Request) {
         }
 
         const dbStart = Date.now();
+        const updateData: Record<string, unknown> = {
+            name,
+            location,
+            quantity: parseInt(quantity),
+            available: parseInt(available),
+            unique: Boolean(unique)
+        };
+
+        // Add assetId if provided, or remove it if explicitly set to empty
+        if (assetId !== undefined) {
+            if (assetId === "" || assetId === null) {
+                updateData.assetId = null;
+            } else {
+                updateData.assetId = assetId;
+            }
+        }
+
         const result = await collection.updateOne(
             { id },
-            {
-                $set: {
-                    name,
-                    location,
-                    quantity: parseInt(quantity),
-                    available: parseInt(available),
-                    unique: Boolean(unique)
-                }
-            }
+            { $set: updateData }
         );
         logDatabaseOperation("updateOne", "equipments", Date.now() - dbStart, { equipmentId: id, name });
 

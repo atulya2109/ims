@@ -27,6 +27,7 @@ const formSchema = z.object({
     name: z.string().nonempty("Name is required"),
     type: z.enum(["unique", "multiple"]),
     location: z.string().nonempty("Location is required"),
+    assetId: z.string().optional(),
     quantity: z.preprocess((val) => {
         // If the value is an empty string, treat it as undefined.
         if (typeof val === "string" && val.trim() === "") return undefined;
@@ -45,6 +46,7 @@ export function EquipmentDialog() {
             name: "",
             type: "unique",
             location: "",
+            assetId: "",
             quantity: 1,
         },
     });
@@ -61,6 +63,7 @@ export function EquipmentDialog() {
                 unique: data.type === "unique",
                 quantity: data.type === "multiple" ? data.quantity : 1,
                 available: data.type === "multiple" ? data.quantity : 1,
+                assetId: data.assetId || undefined,
             }),
         }).then((res) => {
             if (!res.ok) {
@@ -77,6 +80,7 @@ export function EquipmentDialog() {
                 name: "",
                 type: "unique",
                 location: "",
+                assetId: "",
                 quantity: 1,
             });
 
@@ -146,6 +150,19 @@ export function EquipmentDialog() {
                                     <FormLabel>Location</FormLabel>
                                     <FormControl>
                                         <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="assetId"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Asset ID (Optional)</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Enter university asset ID" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>

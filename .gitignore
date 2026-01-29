@@ -50,6 +50,9 @@ next-env.d.ts
 .mcp.json
 logs
 
+# backups
+backups/
+
 # python
 __pycache__/
 *.py[cod]

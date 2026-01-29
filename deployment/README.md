@@ -12,7 +12,9 @@ deployment/
 │   ├── docker-compose.dev.yml        # Local development with MongoDB
 │   └── docker-compose.prod.yml       # Production deployment (app + MongoDB)
 ├── scripts/
-│   └── deploy.sh                     # Automated deployment script
+│   ├── deploy.sh                     # Automated deployment script
+│   ├── backup-mongodb.sh             # MongoDB backup script with rotation
+│   └── restore-mongodb.sh            # MongoDB restore script
 ├── .env.local.example                # Local development environment template
 └── .env.production.example           # Production environment template
 ```
@@ -55,6 +57,8 @@ docker-compose -f deployment/docker/docker-compose.prod.yml up -d
 
 ### Scripts
 - **deploy.sh** - Pulls latest code, builds, and deploys
+- **backup-mongodb.sh** - Creates compressed MongoDB backups with automatic rotation
+- **restore-mongodb.sh** - Restores MongoDB from backup file
 
 ### Environment Templates
 - **.env.local.example** - Development defaults

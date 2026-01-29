@@ -232,17 +232,63 @@ git checkout <previous-commit-hash>
 
 ## Backup and Restore
 
-### Backup MongoDB
+### Automated Backups
+
+The system includes automated backup scripts with rotation.
+
+**Manual Backup:**
 ```bash
-docker exec ims-mongodb-prod mongodump --username admin --password <password> --authenticationDatabase admin --out /data/backup
-docker cp ims-mongodb-prod:/data/backup ./mongodb-backup-$(date +%Y%m%d)
+cd ~/opt/ims
+./deployment/scripts/backup-mongodb.sh
 ```
 
-### Restore MongoDB
+Backups are saved to `backups/mongodb/mongodb-backup-YYYYMMDD-HHMMSS.tar.gz`
+
+**Automated Daily Backups:**
+
+Set up a cron job to run backups automatically:
+
 ```bash
-docker cp ./mongodb-backup ims-mongodb-prod:/data/restore
-docker exec ims-mongodb-prod mongorestore --username admin --password <password> --authenticationDatabase admin /data/restore
+# Edit crontab
+crontab -e
+
+# Add daily backup at 2 AM
+0 2 * * * cd ~/opt/ims && ./deployment/scripts/backup-mongodb.sh >> logs/backup.log 2>&1
+
+# Or weekly backup on Sundays at 3 AM
+0 3 * * 0 cd ~/opt/ims && ./deployment/scripts/backup-mongodb.sh >> logs/backup.log 2>&1
 ```
+
+**Backup Retention:**
+
+By default, backups older than 7 days are automatically deleted. To change retention:
+
+```bash
+# Set retention to 14 days
+RETENTION_DAYS=14 ./deployment/scripts/backup-mongodb.sh
+```
+
+Or add to `.env`:
+```env
+RETENTION_DAYS=14
+```
+
+**View Backups:**
+```bash
+ls -lh backups/mongodb/
+```
+
+### Restore from Backup
+
+```bash
+# List available backups
+./deployment/scripts/restore-mongodb.sh
+
+# Restore from specific backup
+./deployment/scripts/restore-mongodb.sh backups/mongodb/mongodb-backup-20260128-020000.tar.gz
+```
+
+**Warning:** Restore will overwrite all existing data. You'll be prompted to confirm.
 
 ## Support
 

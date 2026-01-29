@@ -1,0 +1,15 @@
+[Unit]
+Description=IMS Application
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/home/atulya/opt/ims
+ExecStart=/usr/bin/docker compose -f deployment/docker/docker-compose.prod.yml up -d
+ExecStop=/usr/bin/docker compose -f deployment/docker/docker-compose.prod.yml down
+User=atulya
+
+[Install]
+WantedBy=multi-user.target

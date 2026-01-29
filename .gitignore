@@ -50,6 +50,9 @@ next-env.d.ts
 .mcp.json
 logs
 
+# claude
+.claude/
+
 # backups
 backups/
 

@@ -11,6 +11,9 @@ COMPOSE_FILE="${COMPOSE_FILE:-deployment/docker/docker-compose.prod.yml}"
 GIT_BRANCH="${GIT_BRANCH:-main}"
 LOG_FILE="${LOG_FILE:-/var/log/ims-deploy.log}"
 
+# Use docker compose v2
+DOCKER_COMPOSE="docker compose"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -78,17 +81,19 @@ if [ ! -f ".env" ]; then
     fi
 fi
 
+# Load environment variables
+log "Loading environment variables..."
+set -a
+source .env
+set +a
+
 # Build new images
 log "Building Docker images..."
-docker-compose -f "$COMPOSE_FILE" build --no-cache || error "Failed to build Docker images"
+$DOCKER_COMPOSE -f "$COMPOSE_FILE" build || error "Failed to build Docker images"
 
-# Stop current containers gracefully
-log "Stopping current containers..."
-docker-compose -f "$COMPOSE_FILE" stop || warning "Failed to stop containers gracefully"
-
-# Start new containers
-log "Starting new containers..."
-docker-compose -f "$COMPOSE_FILE" up -d || error "Failed to start containers"
+# Deploy with rolling restart (handles stop/start gracefully)
+log "Deploying updated containers..."
+$DOCKER_COMPOSE -f "$COMPOSE_FILE" up -d || error "Failed to deploy containers"
 
 # Wait for health checks
 log "Waiting for services to be healthy..."
@@ -98,7 +103,10 @@ sleep 10
 HEALTH_CHECK_RETRIES=12
 HEALTH_CHECK_INTERVAL=5
 for i in $(seq 1 $HEALTH_CHECK_RETRIES); do
-    if docker-compose -f "$COMPOSE_FILE" ps | grep -q "healthy"; then
+    # Check if app container is healthy
+    APP_HEALTH=$($DOCKER_COMPOSE -f "$COMPOSE_FILE" ps --format json | grep -o '"Health":"[^"]*"' | grep -o 'healthy' || echo "")
+
+    if [ "$APP_HEALTH" = "healthy" ]; then
         log "Application is healthy!"
         break
     fi
@@ -117,7 +125,7 @@ docker image prune -f || warning "Failed to prune old images"
 
 # Show running containers
 log "Currently running containers:"
-docker-compose -f "$COMPOSE_FILE" ps
+$DOCKER_COMPOSE -f "$COMPOSE_FILE" ps
 
 log "========================================="
 log "Deployment completed successfully!"

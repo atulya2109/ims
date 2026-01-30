@@ -29,7 +29,7 @@ async function ensureUploadDirs() {
 /**
  * Convert Next.js Request to Node.js IncomingMessage for formidable
  */
-async function convertToNodeRequest(request: NextRequest): Promise<any> {
+async function convertToNodeRequest(request: NextRequest): Promise<Readable & { headers: Record<string, string>; method: string; url: string }> {
   const arrayBuffer = await request.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
 
@@ -304,7 +304,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Find images to delete
-    const imagesToDelete = (equipment.images || []).filter((img: any) =>
+    const imagesToDelete = (equipment.images || []).filter((img: { id: string; originalPath: string; thumbnailPath: string }) =>
       imageIds.includes(img.id)
     );
 

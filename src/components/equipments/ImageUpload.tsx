@@ -45,6 +45,7 @@ export function ImageUpload({
     return () => {
       newPreviews.forEach((url) => URL.revokeObjectURL(url));
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedFiles]);
 
   /**

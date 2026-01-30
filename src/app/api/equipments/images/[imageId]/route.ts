@@ -51,7 +51,7 @@ export async function GET(
     }
 
     // Find the specific image
-    const image = equipment.images?.find((img: any) => img.id === imageId);
+    const image = equipment.images?.find((img: { id: string }) => img.id === imageId);
     if (!image) {
       return NextResponse.json(
         { error: "Image not found" },
@@ -67,7 +67,7 @@ export async function GET(
     // Check if file exists
     try {
       await fs.access(fullPath);
-    } catch (error) {
+    } catch {
       logError(new Error("Image file not found on filesystem"), {
         imageId,
         imagePath,

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Trash2, X, Image as ImageIcon, ZoomIn } from "lucide-react";
+import { Trash2, Image as ImageIcon, ZoomIn } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -30,7 +30,6 @@ import type { ImageGalleryProps } from "@ims/types/equipment";
 export function ImageGallery({
   images = [],
   onDelete,
-  onReorder,
   readOnly = false,
   equipmentId,
 }: ImageGalleryProps) {

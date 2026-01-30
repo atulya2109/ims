@@ -1,6 +1,8 @@
 import { getDb } from "@ims/lib/mongodb";
 import { v4 as uuidv4 } from 'uuid';
 import { logApiRequest, logApiResponse, logError, logDatabaseOperation } from "@ims/lib/logger";
+import fs from 'fs/promises';
+import path from 'path';
 
 export async function GET() {
     const startTime = Date.now();
@@ -163,9 +165,6 @@ export async function DELETE(request: Request) {
 
         // Delete image files from filesystem (non-blocking, errors logged but not thrown)
         if (imagePaths.length > 0) {
-            const fs = require('fs/promises');
-            const path = require('path');
-
             await Promise.allSettled(
                 imagePaths.map(async (relativePath) => {
                     try {

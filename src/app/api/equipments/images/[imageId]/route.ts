@@ -16,10 +16,10 @@ import { logApiRequest, logApiResponse, logError } from "@ims/lib/logger";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { imageId: string } }
+  { params }: { params: Promise<{ imageId: string }> }
 ) {
   const startTime = Date.now();
-  const imageId = params.imageId;
+  const { imageId } = await params;
   logApiRequest("GET", `/api/equipments/images/${imageId}`);
 
   try {

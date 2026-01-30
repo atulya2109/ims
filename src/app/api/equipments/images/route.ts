@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import fs from "fs/promises";
 import path from "path";
 import { Readable } from "stream";
+import { IncomingMessage } from "http";
 import { getDb } from "@ims/lib/mongodb";
 import { logApiRequest, logApiResponse, logDatabaseOperation, logError } from "@ims/lib/logger";
 
@@ -29,7 +30,7 @@ async function ensureUploadDirs() {
 /**
  * Convert Next.js Request to Node.js IncomingMessage for formidable
  */
-async function convertToNodeRequest(request: NextRequest): Promise<Readable & { headers: Record<string, string>; method: string; url: string }> {
+async function convertToNodeRequest(request: NextRequest): Promise<IncomingMessage> {
   const arrayBuffer = await request.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
 
@@ -41,7 +42,13 @@ async function convertToNodeRequest(request: NextRequest): Promise<Readable & { 
     headers: Object.fromEntries(request.headers.entries()),
     method: request.method,
     url: request.url,
-  });
+    httpVersion: "1.1",
+    httpVersionMajor: 1,
+    httpVersionMinor: 1,
+    complete: true,
+    socket: null,
+    connection: null,
+  }) as unknown as IncomingMessage;
 }
 
 /**
@@ -218,7 +225,8 @@ export async function POST(request: NextRequest) {
           $push: {
             images: { $each: processedImages },
           },
-        }
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any
       );
 
       logDatabaseOperation(
@@ -328,7 +336,8 @@ export async function DELETE(request: NextRequest) {
         $pull: {
           images: { id: { $in: imageIds } },
         },
-      }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any
     );
 
     logDatabaseOperation(

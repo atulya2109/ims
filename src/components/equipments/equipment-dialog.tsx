@@ -23,7 +23,6 @@ import {
 import { useState } from "react";
 import { mutate } from "swr";
 import { ImageUpload } from "@ims/components/equipments/ImageUpload";
-import type { EquipmentImage } from "@ims/types/equipment";
 
 const formSchema = z.object({
     name: z.string().nonempty("Name is required"),
@@ -53,76 +52,83 @@ export function EquipmentDialog() {
         },
     });
 
-    const [uploadedImages, setUploadedImages] = useState<EquipmentImage[]>([]);
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [open, setOpen] = useState(false);
-    const [createdEquipmentId, setCreatedEquipmentId] = useState<string | null>(null);
 
     /**
      * Handle equipment creation and image upload (two-step flow)
      *
-     * PHASE 3 API INTEGRATION:
      * Step 1: POST /api/equipments - Create equipment and get insertedId
      * Step 2: POST /api/equipments/images - Upload images with equipmentId from step 1
      */
     const onSubmit = async (data: z.infer<typeof formSchema>) => {
-        // STEP 1: Create equipment
-        const response = await fetch("/api/equipments", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                name: data.name,
-                location: data.location,
-                unique: data.type === "unique",
-                quantity: data.type === "multiple" ? data.quantity : 1,
-                available: data.type === "multiple" ? data.quantity : 1,
-                assetId: data.assetId || undefined,
-            }),
-        });
+        try {
+            // STEP 1: Create equipment
+            const response = await fetch("/api/equipments", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    name: data.name,
+                    location: data.location,
+                    unique: data.type === "unique",
+                    quantity: data.type === "multiple" ? data.quantity : 1,
+                    available: data.type === "multiple" ? data.quantity : 1,
+                    assetId: data.assetId || undefined,
+                }),
+            });
 
-        if (!response.ok) {
-            console.error("Failed to create equipment item");
+            if (!response.ok) {
+                console.error("Failed to create equipment item");
+                alert("Failed to create equipment. Please try again.");
+                return;
+            }
+
+            const result = await response.json();
+            const equipmentId = result.insertedId;
+
+            console.log("Equipment created with ID:", equipmentId);
+
+            // STEP 2: Upload images if any selected
+            if (selectedFiles.length > 0) {
+                const formData = new FormData();
+                formData.append("equipmentId", equipmentId);
+                selectedFiles.forEach((file) => {
+                    formData.append("images", file);
+                });
+
+                const uploadResponse = await fetch("/api/equipments/images", {
+                    method: "POST",
+                    body: formData,
+                });
+
+                if (!uploadResponse.ok) {
+                    alert("Equipment created, but failed to upload images. You can add them later.");
+                }
+            }
+
+            // Invalidate the cache to refresh the data
+            mutate("/api/equipments");
+
+            // Reset the form
+            form.reset({
+                name: "",
+                type: "unique",
+                location: "",
+                assetId: "",
+                quantity: 1,
+            });
+
+            // Reset image state
+            setSelectedFiles([]);
+
+            // Close the dialog
+            setOpen(false);
+        } catch (error) {
+            console.error("Error creating equipment:", error);
             alert("Failed to create equipment. Please try again.");
-            return;
         }
-
-        const result = await response.json();
-        const equipmentId = result.insertedId;
-
-        console.log("Equipment created with ID:", equipmentId);
-        setCreatedEquipmentId(equipmentId);
-
-        // STEP 2: Upload images if any were uploaded via ImageUpload component
-        // This is handled by the ImageUpload component's onUploadComplete callback
-        // Images are already uploaded when user clicks "Upload Images" button
-
-        // Invalidate the cache to refresh the data
-        mutate("/api/equipments");
-
-        // Reset the form
-        form.reset({
-            name: "",
-            type: "unique",
-            location: "",
-            assetId: "",
-            quantity: 1,
-        });
-
-        // Reset image state
-        setUploadedImages([]);
-        setCreatedEquipmentId(null);
-
-        // Close the dialog
-        setOpen(false);
-    };
-
-    /**
-     * Handle image upload completion callback from ImageUpload component
-     */
-    const handleImageUploadComplete = (images: EquipmentImage[]) => {
-        console.log("Images uploaded successfully:", images);
-        setUploadedImages((prev) => [...prev, ...images]);
     };
 
     return (
@@ -218,29 +224,26 @@ export function EquipmentDialog() {
                             />
                         )}
 
-                        {/* Image Upload Section - PHASE 2: MOCK DATA */}
+                        {/* Image Upload Section */}
                         <div className="space-y-2">
                             <FormLabel>Equipment Images (Optional)</FormLabel>
                             <p className="text-xs text-muted-foreground mb-2">
-                                You can add images after creating the equipment, or upload them now.
+                                Select images now, they&apos;ll be uploaded when you create the equipment.
                             </p>
-                            {/*
-                              PHASE 3 NOTE: In production, we'll either:
-                              1. Allow image selection here, then upload after equipment creation
-                              2. Or redirect to edit dialog after creation for image upload
-
-                              For now, showing the ImageUpload component in demo mode
-                            */}
                             <ImageUpload
-                                equipmentId={createdEquipmentId || "temp-preview"}
-                                existingImages={uploadedImages}
-                                onUploadComplete={handleImageUploadComplete}
+                                existingImages={[]}
+                                selectedFiles={selectedFiles}
+                                onFilesChange={setSelectedFiles}
                                 maxImages={5}
                             />
                         </div>
 
                         <DialogFooter>
-                            <Button type="submit">Create Equipment</Button>
+                            <Button type="submit">
+                                {selectedFiles.length > 0
+                                    ? `Create & Upload ${selectedFiles.length} Image${selectedFiles.length > 1 ? 's' : ''}`
+                                    : "Create Equipment"}
+                            </Button>
                         </DialogFooter>
                     </form>
                 </Form>

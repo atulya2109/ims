@@ -45,6 +45,12 @@ next-env.d.ts
 
 # deployment
 /var/log/ims-deploy.log
+deploy.log
+deploy.log.*
+deployments.log
+
+# uploads
+uploads/
 
 # mcp
 .mcp.json

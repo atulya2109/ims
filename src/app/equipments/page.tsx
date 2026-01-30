@@ -7,6 +7,7 @@ import { Checkbox } from "@ims/components/ui/checkbox";
 import { Button } from "@ims/components/ui/button";
 import { Edit, Trash2 } from "lucide-react";
 import useSWR, { mutate } from "swr";
+import type { EquipmentImage } from "@ims/types/equipment";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@ims/components/ui/context-menu";
 import {
     Dialog,
@@ -32,6 +33,8 @@ interface InventoryItem {
     quantity: number;
     available: number;
     unique: boolean;
+    assetId?: string;
+    images?: EquipmentImage[]; // NEW: Array of equipment images
 }
 
 
@@ -194,6 +197,7 @@ export default function EquipmentsPage() {
                                     </TableHead>
                                     <TableHead>Product</TableHead>
                                     <TableHead>Location</TableHead>
+                                    <TableHead>Asset ID</TableHead>
                                     <TableHead>Total</TableHead>
                                     <TableHead>Available</TableHead>
                                     <TableHead className="w-24">Actions</TableHead>
@@ -217,6 +221,7 @@ export default function EquipmentsPage() {
                                                 </TableCell>
                                                 <TableCell>{item.name}</TableCell>
                                                 <TableCell>{item.location}</TableCell>
+                                                <TableCell>{item.assetId || "-"}</TableCell>
                                                 <TableCell>{item.quantity}</TableCell>
                                                 <TableCell>{item.available}</TableCell>
                                                 <TableCell>
@@ -264,6 +269,7 @@ export default function EquipmentsPage() {
                     isOpen={isEditDialogOpen}
                     onClose={() => setIsEditDialogOpen(false)}
                     onSave={onEquipmentSaved}
+                    mutateEquipments={mutateEquipments}
                 />
             </div>
         </div>

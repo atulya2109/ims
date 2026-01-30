@@ -2,6 +2,7 @@ import pino from "pino";
 import fs from "fs";
 import path from "path";
 import { createStream } from "rotating-file-stream";
+import pretty from "pino-pretty";
 
 const isDevelopment = process.env.NODE_ENV !== "production";
 
@@ -13,17 +14,15 @@ if (!isDevelopment && typeof window === "undefined") {
   }
 }
 
-// Create log streams for production
+// Create log streams (synchronous, no worker threads)
 const createLogStreams = () => {
   if (isDevelopment || typeof window !== "undefined") {
-    // Development: Use pino-pretty for human-readable console output
-    return pino.transport({
-      target: "pino-pretty",
-      options: {
-        colorize: true,
-        translateTime: "HH:MM:ss Z",
-        ignore: "pid,hostname",
-      },
+    // Development: Use pino-pretty as a synchronous stream (no worker threads)
+    return pretty({
+      colorize: true,
+      translateTime: "HH:MM:ss Z",
+      ignore: "pid,hostname",
+      sync: true, // Use synchronous mode to avoid worker threads
     });
   }
 

@@ -22,11 +22,14 @@ import {
 } from "@ims/components/ui/select"
 import { useState } from "react";
 import { mutate } from "swr";
+import { ImageUpload } from "@ims/components/equipments/ImageUpload";
+import type { EquipmentImage } from "@ims/types/equipment";
 
 const formSchema = z.object({
     name: z.string().nonempty("Name is required"),
     type: z.enum(["unique", "multiple"]),
     location: z.string().nonempty("Location is required"),
+    assetId: z.string().optional(),
     quantity: z.preprocess((val) => {
         // If the value is an empty string, treat it as undefined.
         if (typeof val === "string" && val.trim() === "") return undefined;
@@ -45,12 +48,25 @@ export function EquipmentDialog() {
             name: "",
             type: "unique",
             location: "",
+            assetId: "",
             quantity: 1,
         },
     });
 
+    const [uploadedImages, setUploadedImages] = useState<EquipmentImage[]>([]);
+    const [open, setOpen] = useState(false);
+    const [createdEquipmentId, setCreatedEquipmentId] = useState<string | null>(null);
+
+    /**
+     * Handle equipment creation and image upload (two-step flow)
+     *
+     * PHASE 3 API INTEGRATION:
+     * Step 1: POST /api/equipments - Create equipment and get insertedId
+     * Step 2: POST /api/equipments/images - Upload images with equipmentId from step 1
+     */
     const onSubmit = async (data: z.infer<typeof formSchema>) => {
-        await fetch("/api/equipments", {
+        // STEP 1: Create equipment
+        const response = await fetch("/api/equipments", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -61,31 +77,53 @@ export function EquipmentDialog() {
                 unique: data.type === "unique",
                 quantity: data.type === "multiple" ? data.quantity : 1,
                 available: data.type === "multiple" ? data.quantity : 1,
+                assetId: data.assetId || undefined,
             }),
-        }).then((res) => {
-            if (!res.ok) {
-                // Handle error response
-                console.error("Failed to create equipment item");
-                return;
-            }
+        });
 
-            // Invalidate the cache to refresh the data
-            mutate("/api/equipments");
+        if (!response.ok) {
+            console.error("Failed to create equipment item");
+            alert("Failed to create equipment. Please try again.");
+            return;
+        }
 
-            // Optionally reset the form after successful submission
-            form.reset({
-                name: "",
-                type: "unique",
-                location: "",
-                quantity: 1,
-            });
+        const result = await response.json();
+        const equipmentId = result.insertedId;
 
-            // Close the dialog after submission if needed
-            setOpen(false); // Close the dialog after successful submission
-        })
+        console.log("Equipment created with ID:", equipmentId);
+        setCreatedEquipmentId(equipmentId);
+
+        // STEP 2: Upload images if any were uploaded via ImageUpload component
+        // This is handled by the ImageUpload component's onUploadComplete callback
+        // Images are already uploaded when user clicks "Upload Images" button
+
+        // Invalidate the cache to refresh the data
+        mutate("/api/equipments");
+
+        // Reset the form
+        form.reset({
+            name: "",
+            type: "unique",
+            location: "",
+            assetId: "",
+            quantity: 1,
+        });
+
+        // Reset image state
+        setUploadedImages([]);
+        setCreatedEquipmentId(null);
+
+        // Close the dialog
+        setOpen(false);
     };
 
-    const [open, setOpen] = useState(false);
+    /**
+     * Handle image upload completion callback from ImageUpload component
+     */
+    const handleImageUploadComplete = (images: EquipmentImage[]) => {
+        console.log("Images uploaded successfully:", images);
+        setUploadedImages((prev) => [...prev, ...images]);
+    };
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -151,6 +189,19 @@ export function EquipmentDialog() {
                                 </FormItem>
                             )}
                         />
+                        <FormField
+                            control={form.control}
+                            name="assetId"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Asset ID (Optional)</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Enter university asset ID" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                         {form.watch("type") === "multiple" && (
                             <FormField
                                 control={form.control}
@@ -166,8 +217,30 @@ export function EquipmentDialog() {
                                 )}
                             />
                         )}
+
+                        {/* Image Upload Section - PHASE 2: MOCK DATA */}
+                        <div className="space-y-2">
+                            <FormLabel>Equipment Images (Optional)</FormLabel>
+                            <p className="text-xs text-muted-foreground mb-2">
+                                You can add images after creating the equipment, or upload them now.
+                            </p>
+                            {/*
+                              PHASE 3 NOTE: In production, we'll either:
+                              1. Allow image selection here, then upload after equipment creation
+                              2. Or redirect to edit dialog after creation for image upload
+
+                              For now, showing the ImageUpload component in demo mode
+                            */}
+                            <ImageUpload
+                                equipmentId={createdEquipmentId || "temp-preview"}
+                                existingImages={uploadedImages}
+                                onUploadComplete={handleImageUploadComplete}
+                                maxImages={5}
+                            />
+                        </div>
+
                         <DialogFooter>
-                            <Button type="submit">Create</Button>
+                            <Button type="submit">Create Equipment</Button>
                         </DialogFooter>
                     </form>
                 </Form>

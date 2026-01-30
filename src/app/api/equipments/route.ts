@@ -146,12 +146,44 @@ export async function DELETE(request: Request) {
         const { items } = await request.json();
 
         const dbStart = Date.now();
+
+        // Fetch equipment documents to get image paths before deletion
+        const equipments = await collection.find({ id: { $in: items } }).toArray();
+
+        // Collect all image paths for deletion
+        const imagePaths: string[] = [];
+        for (const equipment of equipments) {
+            if (equipment.images && Array.isArray(equipment.images)) {
+                for (const image of equipment.images) {
+                    if (image.originalPath) imagePaths.push(image.originalPath);
+                    if (image.thumbnailPath) imagePaths.push(image.thumbnailPath);
+                }
+            }
+        }
+
+        // Delete image files from filesystem (non-blocking, errors logged but not thrown)
+        if (imagePaths.length > 0) {
+            const fs = require('fs/promises');
+            const path = require('path');
+
+            await Promise.allSettled(
+                imagePaths.map(async (relativePath) => {
+                    try {
+                        const fullPath = path.join(process.cwd(), relativePath);
+                        await fs.unlink(fullPath);
+                    } catch (err) {
+                        console.error(`Failed to delete image file ${relativePath}:`, err);
+                    }
+                })
+            );
+        }
+
         // Delete the selected items from the database
         const result = await collection.deleteMany({ id: { $in: items } });
-        logDatabaseOperation("deleteMany", "equipments", Date.now() - dbStart, { itemCount: items.length, deletedCount: result.deletedCount });
+        logDatabaseOperation("deleteMany", "equipments", Date.now() - dbStart, { itemCount: items.length, deletedCount: result.deletedCount, imagesDeleted: imagePaths.length });
 
         const duration = Date.now() - startTime;
-        logApiResponse("DELETE", "/api/equipments", 200, duration, { itemCount: items.length, deletedCount: result.deletedCount });
+        logApiResponse("DELETE", "/api/equipments", 200, duration, { itemCount: items.length, deletedCount: result.deletedCount, imagesDeleted: imagePaths.length });
         return new Response(JSON.stringify(result), { status: 200 });
     } catch (error) {
         logError(error, { method: "DELETE", path: "/api/equipments" });

@@ -7,6 +7,7 @@ import { Checkbox } from "@ims/components/ui/checkbox";
 import { Button } from "@ims/components/ui/button";
 import { Edit, Trash2 } from "lucide-react";
 import useSWR, { mutate } from "swr";
+import type { EquipmentImage } from "@ims/types/equipment";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "@ims/components/ui/context-menu";
 import {
     Dialog,
@@ -33,6 +34,7 @@ interface InventoryItem {
     available: number;
     unique: boolean;
     assetId?: string;
+    images?: EquipmentImage[]; // NEW: Array of equipment images
 }
 
 
@@ -267,6 +269,7 @@ export default function EquipmentsPage() {
                     isOpen={isEditDialogOpen}
                     onClose={() => setIsEditDialogOpen(false)}
                     onSave={onEquipmentSaved}
+                    mutateEquipments={mutateEquipments}
                 />
             </div>
         </div>

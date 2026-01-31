@@ -66,22 +66,13 @@ export async function PUT(request: Request) {
         const db = await getDb();
         const collection = db.collection("equipments");
 
-        const { id, name, location, quantity, available, unique, assetId } = await request.json();
+        const { id, name, location, quantity, unique, assetId } = await request.json();
 
         // Validate required fields
-        if (!id || !name || !location || quantity === undefined || available === undefined) {
+        if (!id || !name || !location || quantity === undefined) {
             logApiResponse("PUT", "/api/equipments", 400, Date.now() - startTime, { error: "Missing required fields" });
             return new Response(
                 JSON.stringify({ error: "Missing required fields" }),
-                { status: 400 }
-            );
-        }
-
-        // Validate that available <= quantity
-        if (available > quantity) {
-            logApiResponse("PUT", "/api/equipments", 400, Date.now() - startTime, { error: "Available > quantity" });
-            return new Response(
-                JSON.stringify({ error: "Available quantity cannot exceed total quantity" }),
                 { status: 400 }
             );
         }
@@ -91,7 +82,6 @@ export async function PUT(request: Request) {
             name,
             location,
             quantity: parseInt(quantity),
-            available: parseInt(available),
             unique: Boolean(unique)
         };
 

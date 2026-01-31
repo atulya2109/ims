@@ -28,12 +28,8 @@ const equipmentSchema = z.object({
   name: z.string().min(1, "Equipment name is required"),
   location: z.string().min(1, "Location is required"),
   quantity: z.number().min(1, "Quantity must be at least 1"),
-  available: z.number().min(0, "Available quantity cannot be negative"),
   unique: z.boolean(),
   assetId: z.string().optional(),
-}).refine((data) => data.available <= data.quantity, {
-  message: "Available quantity cannot exceed total quantity",
-  path: ["available"],
 });
 
 interface Equipment {
@@ -66,7 +62,6 @@ export function EditEquipmentDialog({ equipment, isOpen, onClose, onSave, mutate
       name: equipment?.name || "",
       location: equipment?.location || "",
       quantity: equipment?.quantity || 1,
-      available: equipment?.available || 0,
       unique: equipment?.unique || false,
       assetId: equipment?.assetId || "",
     },
@@ -79,7 +74,6 @@ export function EditEquipmentDialog({ equipment, isOpen, onClose, onSave, mutate
         name: equipment.name,
         location: equipment.location,
         quantity: equipment.quantity,
-        available: equipment.available,
         unique: equipment.unique,
         assetId: equipment.assetId || "",
       });
@@ -240,24 +234,6 @@ export function EditEquipmentDialog({ equipment, isOpen, onClose, onSave, mutate
                     <Input
                       type="number"
                       placeholder="Enter total quantity"
-                      {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="available"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Available Quantity</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="Enter available quantity"
                       {...field}
                       onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                     />

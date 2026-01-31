@@ -38,6 +38,11 @@ RUN adduser --system --uid 1001 nextjs
 # Create logs directory with proper permissions
 RUN mkdir -p /app/logs && chown nextjs:nodejs /app/logs
 
+# Create uploads directory with proper permissions
+RUN mkdir -p /app/uploads/equipment-images/originals && \
+    mkdir -p /app/uploads/equipment-images/thumbnails && \
+    chown -R nextjs:nodejs /app/uploads
+
 # Copy necessary files
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/package*.json ./

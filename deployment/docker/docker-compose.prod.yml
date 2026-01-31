@@ -39,6 +39,7 @@ services:
       MONGODB_DB: ${MONGODB_DB:-ims}
     volumes:
       - app_logs:/app/logs
+      - equipment_images:/app/uploads/equipment-images
     depends_on:
       mongodb:
         condition: service_healthy
@@ -70,6 +71,8 @@ volumes:
   mongodb_config:
     driver: local
   app_logs:
+    driver: local
+  equipment_images:
     driver: local
 
 networks:
